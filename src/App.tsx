@@ -17,6 +17,13 @@ interface ChainEntry {
   pharmacyType?: PharmacyType
 }
 
+interface ContactNote {
+  id: string
+  author: string
+  text: string
+  timestamp: string
+}
+
 interface Contact {
   id: string
   name: string
@@ -33,6 +40,7 @@ interface Contact {
   currentChainIndex: number
   lastActive: string
   activityLog: string[]
+  notes?: ContactNote[]
 }
 
 // ─── Sample Data ──────────────────────────────────────────────────────────────
@@ -182,6 +190,26 @@ function Avatar({ initials, color, size = 36 }: { initials: string; color: strin
     >
       {initials}
     </div>
+  )
+}
+
+// Small round source marker shown next to the contact name — same idea as a
+// Telegram/Facebook app badge, but for phone-registered ("Manual") contacts.
+function ManualSourceBadge() {
+  return (
+    <span className="inline-flex items-center justify-center w-[15px] h-[15px] rounded-full bg-blue-500 shrink-0" title="Manual (phone) inquiry">
+      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+      </svg>
+    </span>
+  )
+}
+
+function ChatIcon({ size = 14, className = '' }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+    </svg>
   )
 }
 
@@ -1182,6 +1210,89 @@ function DetailPane({
   )
 }
 
+// ─── Notes Modal (internal admin notes, not a two-way patient chat) ──────────
+
+const CURRENT_ADMIN_NAME = 'PFSD Admin'
+
+function formatNoteTimestamp(d: Date): string {
+  return d.toLocaleString('en-US', { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+}
+
+// Docked bottom-right like a Messenger/FB chat popup — shifts left to sit
+// beside the dept breakdown (DetailPane) instead of hiding behind it when open.
+function NotesModal({
+  contact, dockedNextToPane, onClose, onAddNote,
+}: {
+  contact: Contact; dockedNextToPane: boolean; onClose: () => void; onAddNote: (text: string) => void
+}) {
+  const [text, setText] = useState('')
+  const notes = contact.notes ?? []
+
+  const handleAdd = () => {
+    if (!text.trim()) return
+    onAddNote(text.trim())
+    setText('')
+  }
+
+  return (
+    <div
+      className={`fixed bottom-0 z-50 transition-[right] duration-150 ${dockedNextToPane ? 'right-[326px]' : 'right-4'}`}
+    >
+      <div className="bg-white rounded-t-2xl shadow-2xl border border-gray-200 border-b-0 w-[320px] max-h-[65vh] flex flex-col overflow-hidden">
+        <div className="flex items-start justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/60 shrink-0">
+          <div className="min-w-0">
+            <h2 className="text-[13px] font-semibold text-gray-900 truncate">Notes · {contact.name}</h2>
+            <p className="text-[10.5px] text-gray-400 mt-0.5">Internal notes — not visible to the patient</p>
+          </div>
+          <button onClick={onClose} className="text-gray-300 hover:text-gray-600 text-xl leading-none shrink-0 ml-2">×</button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {notes.length === 0 ? (
+            <p className="text-[12px] text-gray-400 text-center py-8">No notes yet. Add the first one below.</p>
+          ) : (
+            notes.map(n => (
+              <div key={n.id} className="flex gap-2.5">
+                <span className="w-1 rounded-full bg-blue-100 shrink-0" />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12px] font-semibold text-gray-800">{n.author}</span>
+                    <span className="text-[10px] text-gray-400">{n.timestamp}</span>
+                  </div>
+                  <p className="text-[13px] text-gray-600 mt-0.5 whitespace-pre-wrap break-words">{n.text}</p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="p-3 border-t border-gray-100 flex items-end gap-2 shrink-0">
+          <textarea
+            value={text}
+            onChange={e => setText(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                handleAdd()
+              }
+            }}
+            rows={2}
+            placeholder="Write a note…"
+            className="flex-1 text-[13px] border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+          />
+          <button
+            disabled={!text.trim()}
+            onClick={handleAdd}
+            className="px-4 py-2 text-[13px] font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-40 transition-colors shrink-0"
+          >
+            Add
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Contacts Table (shared by Inbox and Manual pages) ───────────────────────
 
 function ContactsTable({
@@ -1206,6 +1317,15 @@ function ContactsTable({
   useIconActions?: boolean
 }) {
   const [messageContact, setMessageContact] = useState<Contact | null>(null)
+
+  const [notesContactId, setNotesContactId] = useState<string | null>(null)
+  const notesContact = contacts.find(c => c.id === notesContactId) ?? null
+
+  const handleAddNote = (text: string) => {
+    if (!notesContact) return
+    const note: ContactNote = { id: `note-${Date.now()}`, author: CURRENT_ADMIN_NAME, text, timestamp: formatNoteTimestamp(new Date()) }
+    updateContact({ ...notesContact, notes: [...(notesContact.notes ?? []), note] })
+  }
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
@@ -1286,16 +1406,30 @@ function ContactsTable({
                         <div>
                           <div className="flex items-center gap-1.5">
                             <span className="text-[13px] font-semibold text-gray-900">{contact.name}</span>
-                            {contact.priority === 'Prio' && (
+                            {contact.source === 'Manual' && <ManualSourceBadge />}
+                          {contact.priority === 'Prio' && (
                               <span className="text-[10px] px-1.5 py-px rounded font-bold bg-orange-100 text-orange-600 leading-none">PRIO</span>
                             )}
                           </div>
-                          <div className="flex items-center gap-1 mt-0.5">
-                            <span className={`text-[11px] px-1.5 py-px rounded font-medium ${contact.source === 'Telegram' ? 'bg-blue-50 text-blue-500' : contact.source === 'Facebook' ? 'bg-indigo-50 text-indigo-500' : 'bg-gray-100 text-gray-500'}`}>{contact.source}</span>
-                            {contact.hnNumber && <span className="text-[11px] text-gray-400">{contact.hnNumber}</span>}
-                            {contact.phone && <span className="text-[11px] text-gray-300">· {contact.phone}</span>}
+                          {contact.source === 'Manual' ? (
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <button
+                              onClick={e => { e.stopPropagation(); setNotesContactId(contact.id) }}
+                              className="inline-flex items-center justify-center w-5 h-5 rounded text-blue-500 hover:bg-blue-50 transition-colors"
+                              title="Notes"
+                            >
+                              <ChatIcon />
+                            </button>
+                            {contact.phone && <span className="text-[11px] text-gray-400">{contact.phone}</span>}
                           </div>
-                        </div>
+                        ) : (
+                          <div className="flex items-center gap-1 mt-0.5">
+                              <span className={`text-[11px] px-1.5 py-px rounded font-medium ${contact.source === 'Telegram' ? 'bg-blue-50 text-blue-500' : 'bg-indigo-50 text-indigo-500'}`}>{contact.source}</span>
+                              {contact.hnNumber && <span className="text-[11px] text-gray-400">{contact.hnNumber}</span>}
+                              {contact.phone && <span className="text-[11px] text-gray-300">· {contact.phone}</span>}
+                            </div>
+                          )}
+                      </div>
                       </div>
                     )}
                   </td>
@@ -1444,6 +1578,15 @@ function ContactsTable({
 
       {messageContact && (
         <MessageBoxModal contact={messageContact} onClose={() => setMessageContact(null)} />
+      )}
+
+      {notesContact && (
+        <NotesModal
+          contact={notesContact}
+          dockedNextToPane={paneContact !== null && viewAs === 'PFSD'}
+          onClose={() => setNotesContactId(null)}
+          onAddNote={handleAddNote}
+        />
       )}
     </div>
   )
