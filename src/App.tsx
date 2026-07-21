@@ -79,7 +79,7 @@ const INIT: Contact[] = [
   },
   {
     id: '6', name: 'Arun P.', initials: 'AP', color: '#ec4899',
-    source: 'Telegram', hnNumber: 'HN00123', phone: '0891234567', lastMessage: 'Inquired about post-op care',
+    source: 'Manual', hnNumber: 'HN00123', phone: '0891234567', lastMessage: 'Inquired about post-op care',
     firstContact: '12 Jul 2026', status: 'Pending', priority: 'Prio',
     chain: [
       { dept: 'MA (IPD)', comment: 'Handle post-op care inquiry and coordinate with nurse', returnComment: '', entryStatus: 'active' },
@@ -142,6 +142,17 @@ const CURRENT_WAITING_TONE = { dot: 'bg-amber-500', text: 'text-amber-700' }
 function deptShortLabel(dept: Dept): string {
   const match = dept.match(/\(([^)]+)\)/)
   return match ? match[1] : dept
+}
+
+// Seed dates are free-text ('08 Jul 2026', 'Jul 10, 03:55 AM' — the latter has
+// no year at all), so an exact Date comparison against a <input type="date">
+// value isn't reliable. Matching month+day only sidesteps that inconsistency.
+function matchesLooseDate(dateStr: string, isoDate: string): boolean {
+  if (!isoDate) return true
+  const d = new Date(dateStr)
+  if (Number.isNaN(d.getTime())) return true
+  const [, month, day] = isoDate.split('-')
+  return String(d.getMonth() + 1).padStart(2, '0') === month && String(d.getDate()).padStart(2, '0') === day
 }
 
 // Used only for the "current" (isCurrent) badge/dot in DetailPane's breakdown —
@@ -250,6 +261,329 @@ function PencilIcon({ className }: { className?: string }) {
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <path d="M13.5 3.5l3 3L6 17l-4 1 1-4L13.5 3.5z" />
     </svg>
+  )
+}
+
+function ChatBubbleIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M3 9.6c0-3.6 3.13-6.5 7-6.5s7 2.9 7 6.5-3.13 6.5-7 6.5c-.86 0-1.68-.14-2.43-.4L4 17l1.1-3.13A6.16 6.16 0 013 9.6z" />
+    </svg>
+  )
+}
+
+function PhoneIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M6.5 3.5c.3 0 .58.18.7.46l1 2.3c.11.26.07.55-.1.77l-1.1 1.4a9 9 0 004.6 4.6l1.4-1.1c.22-.17.51-.21.77-.1l2.3 1c.28.12.46.4.46.7v2.2c0 .8-.7 1.42-1.49 1.31A13.5 13.5 0 013 5c-.11-.79.51-1.5 1.31-1.5h2.2z" />
+    </svg>
+  )
+}
+
+function TelegramGlyph({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" className={className}>
+      <circle cx="10" cy="10" r="10" fill="#29A9EB" />
+      <path d="M4.7 9.9l10.6-4.3c.5-.2 1 .2.8.8l-1.8 8.6c-.1.5-.7.7-1.1.4l-2.6-2-1.3 1.3c-.3.3-.7.1-.8-.3l-.4-2.5-2.6-1.1c-.5-.2-.5-.9.2-1.1z" fill="#fff" />
+    </svg>
+  )
+}
+
+function FacebookGlyph({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" className={className}>
+      <circle cx="10" cy="10" r="10" fill="#1877F2" />
+      <path d="M12.5 6.5h-1.2c-.4 0-.8.3-.8.9v1.3h2l-.3 2h-1.7v5h-2v-5H7v-2h1.5V7.1c0-1.5 1-2.6 2.5-2.6h1.5v2z" fill="#fff" />
+    </svg>
+  )
+}
+
+function SourceIcon({ source, className }: { source: Contact['source']; className?: string }) {
+  if (source === 'Telegram') return <TelegramGlyph className={className} />
+  if (source === 'Facebook') return <FacebookGlyph className={className} />
+  return null
+}
+
+function HelpCircleIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="10" cy="10" r="8" />
+      <path d="M7.8 7.6a2.2 2.2 0 014.2.9c0 1.5-2.2 1.6-2.2 3.1" />
+      <circle cx="10" cy="14.2" r="0.7" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+function ExpandIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M12.5 3h4.5v4.5M7.5 17H3v-4.5M17 3l-5.5 5.5M3 17l5.5-5.5" />
+    </svg>
+  )
+}
+
+function MinimizeIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className={className}>
+      <line x1="4" y1="14" x2="16" y2="14" />
+    </svg>
+  )
+}
+
+function CloseXIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className={className}>
+      <line x1="5" y1="5" x2="15" y2="15" />
+      <line x1="15" y1="5" x2="5" y2="15" />
+    </svg>
+  )
+}
+
+function CheckIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M4 10.5l4 4 8-9" />
+    </svg>
+  )
+}
+
+function PaperclipIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M14.5 7.2l-6 6a2.3 2.3 0 003.3 3.3l6.2-6.2a3.9 3.9 0 00-5.5-5.5l-6.3 6.3a5.5 5.5 0 007.8 7.8" />
+    </svg>
+  )
+}
+
+function SendIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="currentColor" className={className}>
+      <path d="M2.3 10.1L17 3.6c.8-.35 1.6.35 1.3 1.15l-2.6 12.4c-.18.86-1.15 1.25-1.9.75l-3.5-2.35-1.75 1.85c-.42.44-1.13.2-1.22-.4l-.55-3.6-3.5-1.55c-.72-.32-.75-1.32.08-1.75z" />
+    </svg>
+  )
+}
+
+// ─── Inbox stat-card + filter icons ──────────────────────────────────────────
+
+function UsersIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="7.5" cy="6.5" r="2.5" />
+      <path d="M2.8 16c.4-2.6 2.4-4.3 4.7-4.3s4.3 1.7 4.7 4.3" />
+      <circle cx="14" cy="7" r="2" />
+      <path d="M13 11.8c1.9.3 3.4 1.8 3.7 4" />
+    </svg>
+  )
+}
+
+function UserPlusIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="8" cy="7" r="3" />
+      <path d="M2.5 16.5c.5-3 2.7-5 5.5-5s5 2 5.5 5" />
+      <path d="M15.5 5.5v5M13 8h5" />
+    </svg>
+  )
+}
+
+function UserXIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="8" cy="7" r="3" />
+      <path d="M2.5 16.5c.5-3 2.7-5 5.5-5s5 2 5.5 5" />
+      <path d="M13.5 5.5l4 4M17.5 5.5l-4 4" />
+    </svg>
+  )
+}
+
+function ClockIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="10" cy="10" r="7.5" />
+      <path d="M10 5.8V10l3 2" />
+    </svg>
+  )
+}
+
+function HourglassIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M5 3h10M5 17h10" />
+      <path d="M6 3c0 3 2 4.5 4 5 2-.5 4-2 4-5M6 17c0-3 2-4.5 4-5 2 .5 4 2 4 5" />
+    </svg>
+  )
+}
+
+function CheckCircleIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="10" cy="10" r="7.5" />
+      <path d="M6.8 10.2l2.2 2.2 4.2-4.8" />
+    </svg>
+  )
+}
+
+function SearchIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="8.5" cy="8.5" r="5.5" />
+      <line x1="16.5" y1="16.5" x2="12.7" y2="12.7" />
+    </svg>
+  )
+}
+
+function CalendarIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <rect x="3" y="4.5" width="14" height="12" rx="1.5" />
+      <path d="M3 8.2h14M6.5 2.5v3M13.5 2.5v3" />
+    </svg>
+  )
+}
+
+function RefreshIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M4 10a6 6 0 0110-4.2M16 10a6 6 0 01-10 4.2" />
+      <path d="M14 3v3h-3M6 17v-3h3" />
+    </svg>
+  )
+}
+
+function IconChip({ tone, children }: { tone: 'violet' | 'red' | 'orange' | 'emerald'; children: React.ReactNode }) {
+  const bg = { violet: 'bg-violet-50', red: 'bg-red-50', orange: 'bg-orange-50', emerald: 'bg-emerald-50' }[tone]
+  return <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${bg}`}>{children}</div>
+}
+
+function StatCard({
+  icon,
+  label,
+  count,
+  borderClass,
+}: {
+  icon: React.ReactNode
+  label: string
+  count: number
+  borderClass: string
+}) {
+  return (
+    <div className={`flex items-center gap-3 bg-white rounded-xl border border-gray-100 border-l-4 ${borderClass} shadow-sm px-4 py-3 flex-1 min-w-[168px] shrink-0`}>
+      <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide whitespace-nowrap">{label}</p>
+        <p className="text-[18px] font-bold text-gray-900 leading-tight">{count}</p>
+      </div>
+    </div>
+  )
+}
+
+// ─── Message Box Popup (Inbox contact list) ──────────────────────────────────
+
+interface ChatMessage {
+  from: 'contact' | 'staff'
+  sender?: string
+  text: string
+  time: string
+}
+
+function MessageBoxModal({ contact, onClose }: { contact: Contact; onClose: () => void }) {
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { from: 'contact', text: contact.lastMessage, time: contact.lastActive },
+    { from: 'staff', sender: 'Bot (auto-reply)', text: 'Thanks for reaching out — our team will get back to you shortly.', time: 'Just now' },
+  ])
+  const [draft, setDraft] = useState('')
+  const [minimized, setMinimized] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+
+  const handleSend = () => {
+    if (!draft.trim()) return
+    setMessages(prev => [...prev, { from: 'staff', sender: 'Admin', text: draft.trim(), time: 'Just now' }])
+    setDraft('')
+  }
+
+  if (minimized) {
+    return (
+      <button
+        onClick={() => setMinimized(false)}
+        title={`Restore chat with ${contact.name}`}
+        className="fixed bottom-5 right-5 z-50 rounded-full hover:scale-105 transition-transform"
+      >
+        <div className="relative w-14 h-14 rounded-full shadow-2xl ring-4 ring-white">
+          <Avatar initials={contact.initials} color={contact.color} size={56} />
+          <span className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-white flex items-center justify-center shadow-sm">
+            <SourceIcon source={contact.source} className="w-4 h-4" />
+          </span>
+        </div>
+      </button>
+    )
+  }
+
+  return (
+    <div
+      className={`fixed bottom-5 right-5 z-50 flex flex-col bg-white rounded-2xl shadow-2xl overflow-hidden ${
+        expanded ? 'w-[400px] h-[600px]' : 'w-[340px] h-[480px]'
+      }`}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white shrink-0">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="relative shrink-0">
+            <Avatar initials={contact.initials} color={contact.color} size={32} />
+            <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-white flex items-center justify-center">
+              <SourceIcon source={contact.source} className="w-2.5 h-2.5" />
+            </span>
+          </div>
+          <div className="min-w-0 flex items-center gap-1">
+            <p className="text-[13px] font-semibold truncate">{contact.name}</p>
+            <HelpCircleIcon className="w-3.5 h-3.5 text-white/70 shrink-0" />
+          </div>
+        </div>
+        <div className="flex items-center gap-2.5 shrink-0">
+          <button onClick={() => setExpanded(v => !v)} title={expanded ? 'Shrink' : 'Expand'} className="text-white/80 hover:text-white transition-colors">
+            <ExpandIcon className="w-3.5 h-3.5" />
+          </button>
+          <button onClick={() => setMinimized(true)} title="Minimize" className="text-white/80 hover:text-white transition-colors">
+            <MinimizeIcon className="w-3.5 h-3.5" />
+          </button>
+          <button onClick={onClose} title="Close" className="text-white/80 hover:text-white transition-colors">
+            <CloseXIcon className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 py-3.5 space-y-3 bg-white">
+        {messages.map((m, i) => (
+          <div key={i} className={`flex flex-col ${m.from === 'staff' ? 'items-end' : 'items-start'}`}>
+            <div className={`max-w-[85%] rounded-2xl px-3.5 py-2 text-[13px] leading-relaxed ${
+              m.from === 'staff' ? 'bg-blue-500 text-white rounded-br-sm' : 'bg-gray-100 text-gray-700 rounded-bl-sm'
+            }`}>
+              {m.text}
+            </div>
+            <p className="mt-1 text-[10.5px] text-gray-400 flex items-center gap-1">
+              {m.sender && <span className="font-semibold text-gray-500">{m.sender} ·</span>}
+              {m.time}
+              {m.from === 'staff' && <CheckIcon className="w-3 h-3 text-blue-400" />}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-2 px-3 py-2.5 border-t border-gray-100 shrink-0">
+        <input
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') handleSend() }}
+          placeholder="Type a message…"
+          className="flex-1 text-[13px] px-2 py-1.5 focus:outline-none"
+        />
+        <PaperclipIcon className="w-4 h-4 text-gray-400 shrink-0" />
+        <button onClick={handleSend} disabled={!draft.trim()} title="Send" className="text-blue-500 hover:text-blue-700 disabled:text-gray-300 transition-colors shrink-0">
+          <SendIcon className="w-4.5 h-4.5" />
+        </button>
+      </div>
+    </div>
   )
 }
 
@@ -859,6 +1193,7 @@ function ContactsTable({
   handleStart,
   handleMarkComplete,
   onReturn,
+  useIconActions = false,
 }: {
   contacts: Contact[]
   viewAs: ViewAs
@@ -868,7 +1203,10 @@ function ContactsTable({
   handleStart: (c: Contact) => void
   handleMarkComplete: (c: Contact) => void
   onReturn: (c: Contact) => void
+  useIconActions?: boolean
 }) {
+  const [messageContact, setMessageContact] = useState<Contact | null>(null)
+
   return (
     <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
       <div className="overflow-x-auto">
@@ -917,22 +1255,49 @@ function ContactsTable({
                 >
                   {/* Contact */}
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <Avatar initials={contact.initials} color={contact.color} />
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[13px] font-semibold text-gray-900">{contact.name}</span>
-                          {contact.priority === 'Prio' && (
-                            <span className="text-[10px] px-1.5 py-px rounded font-bold bg-orange-100 text-orange-600 leading-none">PRIO</span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <span className={`text-[11px] px-1.5 py-px rounded font-medium ${contact.source === 'Telegram' ? 'bg-blue-50 text-blue-500' : contact.source === 'Facebook' ? 'bg-indigo-50 text-indigo-500' : 'bg-gray-100 text-gray-500'}`}>{contact.source}</span>
-                          {contact.hnNumber && <span className="text-[11px] text-gray-400">{contact.hnNumber}</span>}
-                          {contact.phone && <span className="text-[11px] text-gray-300">· {contact.phone}</span>}
+                    {useIconActions ? (
+                      <div className="flex items-center gap-3">
+                        <Avatar initials={contact.initials} color={contact.color} />
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[13px] font-semibold text-gray-900">{contact.name}</span>
+                            <SourceIcon source={contact.source} className="w-3.5 h-3.5 shrink-0" />
+                            {contact.priority === 'Prio' && (
+                              <span className="text-[10px] px-1.5 py-px rounded font-bold bg-orange-100 text-orange-600 leading-none">PRIO</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2.5 mt-1" onClick={e => e.stopPropagation()}>
+                            <button
+                              onClick={() => setMessageContact(contact)}
+                              title="Message"
+                              className="text-blue-500 hover:text-blue-700 transition-colors"
+                            >
+                              <ChatBubbleIcon className="w-4 h-4" />
+                            </button>
+                            <span className="text-emerald-500">
+                              <PhoneIcon className="w-4 h-4" />
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <Avatar initials={contact.initials} color={contact.color} />
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[13px] font-semibold text-gray-900">{contact.name}</span>
+                            {contact.priority === 'Prio' && (
+                              <span className="text-[10px] px-1.5 py-px rounded font-bold bg-orange-100 text-orange-600 leading-none">PRIO</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <span className={`text-[11px] px-1.5 py-px rounded font-medium ${contact.source === 'Telegram' ? 'bg-blue-50 text-blue-500' : contact.source === 'Facebook' ? 'bg-indigo-50 text-indigo-500' : 'bg-gray-100 text-gray-500'}`}>{contact.source}</span>
+                            {contact.hnNumber && <span className="text-[11px] text-gray-400">{contact.hnNumber}</span>}
+                            {contact.phone && <span className="text-[11px] text-gray-300">· {contact.phone}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </td>
 
                   {/* Last message */}
@@ -1076,6 +1441,10 @@ function ContactsTable({
           </tbody>
         </table>
       </div>
+
+      {messageContact && (
+        <MessageBoxModal contact={messageContact} onClose={() => setMessageContact(null)} />
+      )}
     </div>
   )
 }
@@ -1349,10 +1718,25 @@ export default function App() {
   const [assignContact, setAssignContact] = useState<Contact | null>(null)
   const [assignMode, setAssignMode] = useState<'assign' | 'reassign'>('assign')
   const [returnContact, setReturnContact] = useState<Contact | null>(null)
-  const [filterTab, setFilterTab] = useState<'All' | 'Needs Reply' | 'Assigned' | 'Prio'>('All')
+  const [activeTab, setActiveTab] = useState<'needsReply' | 'all'>('all')
+  const [statusFilter, setStatusFilter] = useState<'All' | Status>('All')
+  const [providerFilter, setProviderFilter] = useState<'All' | 'Telegram' | 'Facebook'>('All')
+  const [assigneeFilter, setAssigneeFilter] = useState<'All' | 'Unassigned' | Dept>('All')
+  const [firstContactDateFilter, setFirstContactDateFilter] = useState('')
+  const [lastActiveDateFilter, setLastActiveDateFilter] = useState('')
   const [pharmFilter, setPharmFilter] = useState<'All' | PharmacyType>('All')
   const [search, setSearch] = useState('')
   const [viewOpen, setViewOpen] = useState(false)
+
+  const clearFilters = () => {
+    setActiveTab('all')
+    setStatusFilter('All')
+    setProviderFilter('All')
+    setAssigneeFilter('All')
+    setFirstContactDateFilter('')
+    setLastActiveDateFilter('')
+    setSearch('')
+  }
 
   const updateContact = (updated: Contact) => {
     setContacts(prev => prev.map(c => c.id === updated.id ? updated : c))
@@ -1417,15 +1801,30 @@ export default function App() {
   }
 
   // ── Filtering ──────────────────────────────────────────────────────────────
-  const visible = contacts.filter(c => {
+  // Dept-view scoping only — feeds the stat badges (an overview of the whole
+  // scoped inbox), before the search/status/provider/date/tab filters below
+  // narrow down what the table itself shows.
+  const baseContacts = contacts.filter(c => {
+    if (c.source === 'Manual') return false
     if (viewAs !== 'PFSD') {
       if (c.status === 'Closed') return false
       const active = c.chain[c.currentChainIndex]
       if (!active || active.dept !== viewAs) return false
     }
-    if (filterTab === 'Prio' && c.priority !== 'Prio') return false
-    if (filterTab === 'Needs Reply' && c.status !== 'Open') return false
-    if (filterTab === 'Assigned' && (c.chain.length === 0 || c.status === 'Closed')) return false
+    return true
+  })
+
+  const visible = baseContacts.filter(c => {
+    if (activeTab === 'needsReply' && c.status !== 'Open') return false
+    if (statusFilter !== 'All' && c.status !== statusFilter) return false
+    if (providerFilter !== 'All' && c.source !== providerFilter) return false
+    if (assigneeFilter === 'Unassigned' && c.chain.length > 0) return false
+    if (assigneeFilter !== 'All' && assigneeFilter !== 'Unassigned') {
+      const active = c.chain[c.currentChainIndex]
+      if (!active || active.dept !== assigneeFilter) return false
+    }
+    if (!matchesLooseDate(c.firstContact, firstContactDateFilter)) return false
+    if (!matchesLooseDate(c.lastActive, lastActiveDateFilter)) return false
     if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false
     if (viewAs === 'Pharmacy' && pharmFilter !== 'All') {
       const pe = c.chain.find(e => e.dept === 'Pharmacy')
@@ -1435,10 +1834,14 @@ export default function App() {
   })
 
   const counts = {
-    Open: contacts.filter(c => c.status === 'Open').length,
-    Pending: contacts.filter(c => c.status === 'Pending').length,
-    Closed: contacts.filter(c => c.status === 'Closed').length,
-    Prio: contacts.filter(c => c.priority === 'Prio').length,
+    Total: baseContacts.length,
+    Telegram: baseContacts.filter(c => c.source === 'Telegram').length,
+    Facebook: baseContacts.filter(c => c.source === 'Facebook').length,
+    NewContacts: baseContacts.filter(c => c.activityLog.length <= 1).length,
+    Unassigned: baseContacts.filter(c => c.chain.length === 0).length,
+    Open: baseContacts.filter(c => c.status === 'Open').length,
+    Pending: baseContacts.filter(c => c.status === 'Pending').length,
+    Closed: baseContacts.filter(c => c.status === 'Closed').length,
   }
 
   const viewLabel = viewAs === 'PFSD' ? 'Admin PFSD' : viewAs
@@ -1544,37 +1947,152 @@ export default function App() {
           </header>
 
           <div className="flex-1 overflow-y-auto p-6">
-            {/* Stats */}
-            <div className="flex gap-3 mb-5 flex-wrap">
-              {[
-                { label: 'Open',    count: counts.Open,    bg: 'bg-sky-50',     text: 'text-sky-700',     border: 'border-sky-200' },
-                { label: 'Pending', count: counts.Pending, bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-200' },
-                { label: 'Closed',  count: counts.Closed,  bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
-                { label: 'Prio',    count: counts.Prio,    bg: 'bg-orange-50',  text: 'text-orange-700',  border: 'border-orange-200' },
-              ].map(s => (
-                <div key={s.label} className={`flex flex-col items-center px-5 py-2.5 rounded-xl border ${s.bg} ${s.border} min-w-[80px]`}>
-                  <span className={`text-xl font-bold ${s.text}`}>{s.count}</span>
-                  <span className={`text-[11px] font-medium mt-0.5 ${s.text} whitespace-nowrap`}>{s.label}</span>
-                </div>
-              ))}
+            {/* Stat badges */}
+            <div className="flex gap-3 mb-5 overflow-x-auto pb-1">
+              <StatCard
+                borderClass="border-l-violet-500"
+                label="Total"
+                count={counts.Total}
+                icon={<IconChip tone="violet"><UsersIcon className="w-[18px] h-[18px] text-violet-500" /></IconChip>}
+              />
+              <StatCard borderClass="border-l-blue-500" label="Telegram" count={counts.Telegram} icon={<TelegramGlyph className="w-9 h-9" />} />
+              <StatCard borderClass="border-l-blue-500" label="Facebook" count={counts.Facebook} icon={<FacebookGlyph className="w-9 h-9" />} />
+              <StatCard
+                borderClass="border-l-violet-500"
+                label="New Contacts"
+                count={counts.NewContacts}
+                icon={<IconChip tone="violet"><UserPlusIcon className="w-[18px] h-[18px] text-violet-500" /></IconChip>}
+              />
+              <StatCard
+                borderClass="border-l-red-500"
+                label="Unassigned"
+                count={counts.Unassigned}
+                icon={<IconChip tone="red"><UserXIcon className="w-[18px] h-[18px] text-red-500" /></IconChip>}
+              />
+              <StatCard
+                borderClass="border-l-red-500"
+                label="Open"
+                count={counts.Open}
+                icon={<IconChip tone="red"><ClockIcon className="w-[18px] h-[18px] text-red-500" /></IconChip>}
+              />
+              <StatCard
+                borderClass="border-l-orange-500"
+                label="Pending"
+                count={counts.Pending}
+                icon={<IconChip tone="orange"><HourglassIcon className="w-[18px] h-[18px] text-orange-500" /></IconChip>}
+              />
+              <StatCard
+                borderClass="border-l-emerald-500"
+                label="Closed"
+                count={counts.Closed}
+                icon={<IconChip tone="emerald"><CheckCircleIcon className="w-[18px] h-[18px] text-emerald-500" /></IconChip>}
+              />
             </div>
 
-            <p className="text-[13px] text-gray-400 mb-4">Manage customer messages, assignments, and handoffs in one workspace.</p>
+            {/* Customer Inbox filter card */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                <p className="text-[11px] font-bold text-blue-600 uppercase tracking-wider">Customer Inbox</p>
+              </div>
+              <p className="text-[13px] text-gray-400 mb-4">Manage customer messages, assignments, and handoffs in one clean workspace.</p>
 
-            {/* Filters */}
-            <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-              <div className="flex items-center gap-1 flex-wrap">
-                {(['All', 'Needs Reply', 'Assigned', 'Prio'] as const).map(tab => (
-                  <button
-                    key={tab}
-                    onClick={() => setFilterTab(tab)}
-                    className={`px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors ${filterTab === tab ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800'}`}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+                <div>
+                  <label htmlFor="filter-contact-name" className="text-[11px] font-semibold text-gray-500">Contact Name</label>
+                  <div className="relative mt-1">
+                    <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
+                    <input
+                      id="filter-contact-name"
+                      value={search}
+                      onChange={e => setSearch(e.target.value)}
+                      placeholder="Search Contact Name"
+                      className="w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="filter-status" className="text-[11px] font-semibold text-gray-500">Status</label>
+                  <select
+                    id="filter-status"
+                    value={statusFilter}
+                    onChange={e => setStatusFilter(e.target.value as 'All' | Status)}
+                    className="mt-1 w-full text-[13px] border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
                   >
-                    {tab}
-                  </button>
-                ))}
+                    <option value="All">All</option>
+                    <option value="Open">Open</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Closed">Closed</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="filter-provider" className="text-[11px] font-semibold text-gray-500">Provider</label>
+                  <select
+                    id="filter-provider"
+                    value={providerFilter}
+                    onChange={e => setProviderFilter(e.target.value as 'All' | 'Telegram' | 'Facebook')}
+                    className="mt-1 w-full text-[13px] border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                  >
+                    <option value="All">All</option>
+                    <option value="Telegram">Telegram</option>
+                    <option value="Facebook">Facebook</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="filter-first-contact-date" className="text-[11px] font-semibold text-gray-500">First Contact Date</label>
+                  <div className="relative mt-1">
+                    <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
+                    <input
+                      id="filter-first-contact-date"
+                      type="date"
+                      value={firstContactDateFilter}
+                      onChange={e => setFirstContactDateFilter(e.target.value)}
+                      className="w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="filter-assignee" className="text-[11px] font-semibold text-gray-500">Assignee</label>
+                  <select
+                    id="filter-assignee"
+                    value={assigneeFilter}
+                    onChange={e => setAssigneeFilter(e.target.value as 'All' | 'Unassigned' | Dept)}
+                    className="mt-1 w-full text-[13px] border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                  >
+                    <option value="All">All</option>
+                    <option value="Unassigned">Unassigned</option>
+                    {ALL_DEPTS.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="filter-last-active-date" className="text-[11px] font-semibold text-gray-500">Last Active Date</label>
+                  <div className="relative mt-1">
+                    <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
+                    <input
+                      id="filter-last-active-date"
+                      type="date"
+                      value={lastActiveDateFilter}
+                      onChange={e => setLastActiveDateFilter(e.target.value)}
+                      className="w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <button
+                  onClick={clearFilters}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-orange-500 bg-orange-50 hover:bg-orange-100 transition-colors"
+                >
+                  <RefreshIcon className="w-3.5 h-3.5" /> Clear
+                </button>
                 {viewAs === 'Pharmacy' && (
-                  <div className="flex items-center gap-1 ml-3 pl-3 border-l border-gray-200">
+                  <div className="flex items-center gap-1">
                     <span className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide mr-1">Type:</span>
                     {(['All', 'Question', 'Medicine only'] as const).map(f => (
                       <button
@@ -1588,15 +2106,34 @@ export default function App() {
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                <input
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  placeholder="Search…"
-                  className="text-[13px] border border-gray-200 rounded-lg px-3 py-1.5 w-44 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-                />
-                <span className="text-[11px] text-gray-400 whitespace-nowrap">{visible.length} results</span>
+
+              {/* Tabs */}
+              <div className="flex items-center gap-6 border-b border-gray-100 mt-4">
+                <button
+                  onClick={() => setActiveTab('needsReply')}
+                  className={`flex items-center gap-2 pb-2.5 text-[13px] font-semibold border-b-2 transition-colors ${
+                    activeTab === 'needsReply' ? 'text-gray-900 border-blue-500' : 'text-gray-400 border-transparent hover:text-gray-600'
+                  }`}
+                >
+                  Needs Reply
+                  <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">{counts.Open}</span>
+                  <HelpCircleIcon className="w-3.5 h-3.5 text-gray-300" />
+                </button>
+                <button
+                  onClick={() => setActiveTab('all')}
+                  className={`flex items-center gap-2 pb-2.5 text-[13px] font-semibold border-b-2 transition-colors ${
+                    activeTab === 'all' ? 'text-gray-900 border-blue-500' : 'text-gray-400 border-transparent hover:text-gray-600'
+                  }`}
+                >
+                  All Contacts
+                  <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-gray-200 text-gray-600 text-[10px] font-bold flex items-center justify-center">{counts.Total}</span>
+                  <HelpCircleIcon className="w-3.5 h-3.5 text-gray-300" />
+                </button>
               </div>
+            </div>
+
+            <div className="flex items-center justify-end mb-3">
+              <span className="text-[11px] text-gray-400 whitespace-nowrap">{visible.length} results</span>
             </div>
 
             {/* Table */}
@@ -1609,6 +2146,7 @@ export default function App() {
               handleStart={handleStart}
               handleMarkComplete={handleMarkComplete}
               onReturn={c => setReturnContact(c)}
+              useIconActions
             />
           </div>
         </>
