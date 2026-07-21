@@ -1726,13 +1726,32 @@ function ManualPage({
   onReturn: (c: Contact) => void
 }) {
   const manualContacts = contacts.filter(c => c.source === 'Manual')
-  const [filterTab, setFilterTab] = useState<'All' | 'Needs Reply' | 'Assigned' | 'Prio'>('All')
+  const [activeTab, setActiveTab] = useState<'needsReply' | 'all'>('all')
+  const [statusFilter, setStatusFilter] = useState<'All' | Status>('All')
+  const [assigneeFilter, setAssigneeFilter] = useState<'All' | 'Unassigned' | Dept>('All')
+  const [firstContactDateFilter, setFirstContactDateFilter] = useState('')
+  const [lastActiveDateFilter, setLastActiveDateFilter] = useState('')
   const [search, setSearch] = useState('')
 
+  const clearFilters = () => {
+    setActiveTab('all')
+    setStatusFilter('All')
+    setAssigneeFilter('All')
+    setFirstContactDateFilter('')
+    setLastActiveDateFilter('')
+    setSearch('')
+  }
+
   const visible = manualContacts.filter(c => {
-    if (filterTab === 'Prio' && c.priority !== 'Prio') return false
-    if (filterTab === 'Needs Reply' && c.status !== 'Open') return false
-    if (filterTab === 'Assigned' && (c.chain.length === 0 || c.status === 'Closed')) return false
+    if (activeTab === 'needsReply' && c.status !== 'Open') return false
+    if (statusFilter !== 'All' && c.status !== statusFilter) return false
+    if (assigneeFilter === 'Unassigned' && c.chain.length > 0) return false
+    if (assigneeFilter !== 'All' && assigneeFilter !== 'Unassigned') {
+      const active = c.chain[c.currentChainIndex]
+      if (!active || active.dept !== assigneeFilter) return false
+    }
+    if (!matchesLooseDate(c.firstContact, firstContactDateFilter)) return false
+    if (!matchesLooseDate(c.lastActive, lastActiveDateFilter)) return false
     if (search) {
       const q = search.toLowerCase()
       const matches = c.name.toLowerCase().includes(q) || (c.hnNumber ?? '').toLowerCase().includes(q) || (c.phone ?? '').includes(q)
@@ -1742,10 +1761,12 @@ function ManualPage({
   })
 
   const counts = {
+    Total: manualContacts.length,
+    NewContacts: manualContacts.filter(c => c.activityLog.length <= 1).length,
+    Unassigned: manualContacts.filter(c => c.chain.length === 0).length,
     Open: manualContacts.filter(c => c.status === 'Open').length,
     Pending: manualContacts.filter(c => c.status === 'Pending').length,
     Closed: manualContacts.filter(c => c.status === 'Closed').length,
-    Prio: manualContacts.filter(c => c.priority === 'Prio').length,
   }
 
   const [showForm, setShowForm] = useState(false)
@@ -1784,45 +1805,161 @@ function ManualPage({
           </div>
         )}
 
-        {/* Stats */}
-        <div className="flex gap-3 mb-5 flex-wrap">
-          {[
-            { label: 'Open',    count: counts.Open,    bg: 'bg-sky-50',     text: 'text-sky-700',     border: 'border-sky-200' },
-            { label: 'Pending', count: counts.Pending, bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-200' },
-            { label: 'Closed',  count: counts.Closed,  bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
-            { label: 'Prio',    count: counts.Prio,    bg: 'bg-orange-50',  text: 'text-orange-700',  border: 'border-orange-200' },
-          ].map(s => (
-            <div key={s.label} className={`flex flex-col items-center px-5 py-2.5 rounded-xl border ${s.bg} ${s.border} min-w-[80px]`}>
-              <span className={`text-xl font-bold ${s.text}`}>{s.count}</span>
-              <span className={`text-[11px] font-medium mt-0.5 ${s.text} whitespace-nowrap`}>{s.label}</span>
-            </div>
-          ))}
+        {/* Stat badges */}
+        <div className="flex gap-3 mb-5 overflow-x-auto pb-1">
+          <StatCard
+            borderClass="border-l-violet-500"
+            label="Total"
+            count={counts.Total}
+            icon={<IconChip tone="violet"><UsersIcon className="w-[18px] h-[18px] text-violet-500" /></IconChip>}
+          />
+          <StatCard
+            borderClass="border-l-violet-500"
+            label="New Contacts"
+            count={counts.NewContacts}
+            icon={<IconChip tone="violet"><UserPlusIcon className="w-[18px] h-[18px] text-violet-500" /></IconChip>}
+          />
+          <StatCard
+            borderClass="border-l-red-500"
+            label="Unassigned"
+            count={counts.Unassigned}
+            icon={<IconChip tone="red"><UserXIcon className="w-[18px] h-[18px] text-red-500" /></IconChip>}
+          />
+          <StatCard
+            borderClass="border-l-red-500"
+            label="Open"
+            count={counts.Open}
+            icon={<IconChip tone="red"><ClockIcon className="w-[18px] h-[18px] text-red-500" /></IconChip>}
+          />
+          <StatCard
+            borderClass="border-l-orange-500"
+            label="Pending"
+            count={counts.Pending}
+            icon={<IconChip tone="orange"><HourglassIcon className="w-[18px] h-[18px] text-orange-500" /></IconChip>}
+          />
+          <StatCard
+            borderClass="border-l-emerald-500"
+            label="Closed"
+            count={counts.Closed}
+            icon={<IconChip tone="emerald"><CheckCircleIcon className="w-[18px] h-[18px] text-emerald-500" /></IconChip>}
+          />
         </div>
 
-        <p className="text-[13px] text-gray-400 mb-4">Manual inquiries registered by phone, in the same workflow as Telegram/Facebook.</p>
+        {/* Manual Inquiries filter card */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+            <p className="text-[11px] font-bold text-blue-600 uppercase tracking-wider">Manual Inquiries</p>
+          </div>
+          <p className="text-[13px] text-gray-400 mb-4">Manual inquiries registered by phone, in the same workflow as Telegram/Facebook.</p>
 
-        {/* Filters */}
-        <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-          <div className="flex items-center gap-1 flex-wrap">
-            {(['All', 'Needs Reply', 'Assigned', 'Prio'] as const).map(tab => (
-              <button
-                key={tab}
-                onClick={() => setFilterTab(tab)}
-                className={`px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors ${filterTab === tab ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800'}`}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+            <div>
+              <label htmlFor="manual-filter-contact-name" className="text-[11px] font-semibold text-gray-500">Contact Name</label>
+              <div className="relative mt-1">
+                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
+                <input
+                  id="manual-filter-contact-name"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Search Contact Name"
+                  className="w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="manual-filter-status" className="text-[11px] font-semibold text-gray-500">Status</label>
+              <select
+                id="manual-filter-status"
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value as 'All' | Status)}
+                className="mt-1 w-full text-[13px] border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
               >
-                {tab}
-              </button>
-            ))}
+                <option value="All">All</option>
+                <option value="Open">Open</option>
+                <option value="Pending">Pending</option>
+                <option value="Closed">Closed</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="manual-filter-first-contact-date" className="text-[11px] font-semibold text-gray-500">First Contact Date</label>
+              <div className="relative mt-1">
+                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
+                <input
+                  id="manual-filter-first-contact-date"
+                  type="date"
+                  value={firstContactDateFilter}
+                  onChange={e => setFirstContactDateFilter(e.target.value)}
+                  className="w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="manual-filter-assignee" className="text-[11px] font-semibold text-gray-500">Assignee</label>
+              <select
+                id="manual-filter-assignee"
+                value={assigneeFilter}
+                onChange={e => setAssigneeFilter(e.target.value as 'All' | 'Unassigned' | Dept)}
+                className="mt-1 w-full text-[13px] border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+              >
+                <option value="All">All</option>
+                <option value="Unassigned">Unassigned</option>
+                {ALL_DEPTS.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="manual-filter-last-active-date" className="text-[11px] font-semibold text-gray-500">Last Active Date</label>
+              <div className="relative mt-1">
+                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
+                <input
+                  id="manual-filter-last-active-date"
+                  type="date"
+                  value={lastActiveDateFilter}
+                  onChange={e => setLastActiveDateFilter(e.target.value)}
+                  className="w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                />
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search…"
-              className="text-[13px] border border-gray-200 rounded-lg px-3 py-1.5 w-44 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-            />
-            <span className="text-[11px] text-gray-400 whitespace-nowrap">{visible.length} results</span>
+
+          <button
+            onClick={clearFilters}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-orange-500 bg-orange-50 hover:bg-orange-100 transition-colors"
+          >
+            <RefreshIcon className="w-3.5 h-3.5" /> Clear
+          </button>
+
+          {/* Tabs */}
+          <div className="flex items-center gap-6 border-b border-gray-100 mt-4">
+            <button
+              onClick={() => setActiveTab('needsReply')}
+              className={`flex items-center gap-2 pb-2.5 text-[13px] font-semibold border-b-2 transition-colors ${
+                activeTab === 'needsReply' ? 'text-gray-900 border-blue-500' : 'text-gray-400 border-transparent hover:text-gray-600'
+              }`}
+            >
+              Needs Reply
+              <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">{counts.Open}</span>
+              <HelpCircleIcon className="w-3.5 h-3.5 text-gray-300" />
+            </button>
+            <button
+              onClick={() => setActiveTab('all')}
+              className={`flex items-center gap-2 pb-2.5 text-[13px] font-semibold border-b-2 transition-colors ${
+                activeTab === 'all' ? 'text-gray-900 border-blue-500' : 'text-gray-400 border-transparent hover:text-gray-600'
+              }`}
+            >
+              All Contacts
+              <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-gray-200 text-gray-600 text-[10px] font-bold flex items-center justify-center">{counts.Total}</span>
+              <HelpCircleIcon className="w-3.5 h-3.5 text-gray-300" />
+            </button>
           </div>
+        </div>
+
+        <div className="flex items-center justify-end mb-3">
+          <span className="text-[11px] text-gray-400 whitespace-nowrap">{visible.length} results</span>
         </div>
 
         <ContactsTable
