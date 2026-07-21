@@ -750,6 +750,10 @@ function AssignPopup({
 
   const usedDepts = new Set(chain.map(e => e.dept))
   const available = ALL_DEPTS.filter(d => !usedDepts.has(d))
+  // Pharmacy inquiry type is required, but only for entries PFSD can still edit here —
+  // a locked (already active/completed) entry has no picker on screen to fix it with,
+  // so blocking save on those would create a dead end instead of a useful nudge.
+  const missingPharmacyType = chain.some((e, i) => e.dept === 'Pharmacy' && isEntryEditable(e, i) && !e.pharmacyType)
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -856,32 +860,41 @@ function AssignPopup({
                     style as the selected choice below, so the two states read as one control */}
                 {entry.dept === 'Pharmacy' && (
                   <div>
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Pharmacy inquiry type</label>
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                      Pharmacy inquiry type <span className="text-red-400 normal-case font-medium">(required)</span>
+                    </label>
                     {showNoteEditor ? (
-                      <div className="flex gap-2 mt-1.5">
-                        {(['Question', 'Medicine only'] as PharmacyType[]).map(t => (
-                          <button
-                            key={t}
-                            disabled={isLocked}
-                            onClick={() => !isLocked && updatePharmType(i, t)}
-                            className={`px-3 py-1 rounded-full text-[12px] font-semibold border transition-colors ${
-                              entry.pharmacyType === t
-                                ? 'bg-violet-600 text-white border-violet-600'
-                                : 'bg-white text-gray-500 border-gray-200 hover:border-violet-300 hover:text-violet-600'
-                            } ${isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                          >
-                            {t}
-                          </button>
-                        ))}
-                      </div>
+                      <>
+                        <div className="flex gap-2 mt-1.5">
+                          {(['Question', 'Medicine only'] as PharmacyType[]).map(t => (
+                            <button
+                              key={t}
+                              disabled={isLocked}
+                              onClick={() => !isLocked && updatePharmType(i, t)}
+                              className={`px-3 py-1 rounded-full text-[12px] font-semibold border transition-colors ${
+                                entry.pharmacyType === t
+                                  ? 'bg-violet-600 text-white border-violet-600'
+                                  : 'bg-white text-gray-500 border-gray-200 hover:border-violet-300 hover:text-violet-600'
+                              } ${isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                            >
+                              {t}
+                            </button>
+                          ))}
+                        </div>
+                        {!entry.pharmacyType && (
+                          <p className="mt-1.5 text-[11px] text-red-500">Select an inquiry type before assigning this entry.</p>
+                        )}
+                      </>
                     ) : (
-                      <div className="flex gap-2 mt-1.5">
+                      <div className="flex items-center gap-2 mt-1.5">
                         {entry.pharmacyType ? (
                           <span className="px-3 py-1 rounded-full text-[12px] font-semibold border bg-violet-600 text-white border-violet-600">
                             {entry.pharmacyType}
                           </span>
-                        ) : (
+                        ) : isLocked ? (
                           <span className="text-[12px] text-gray-300 italic">Not set</span>
+                        ) : (
+                          <span className="text-[12px] text-red-500 italic">Not set — click ✎ above to choose one</span>
                         )}
                       </div>
                     )}
@@ -914,7 +927,9 @@ function AssignPopup({
           <button onClick={onClose} className="px-4 py-2 text-[13px] text-gray-500 hover:text-gray-800">Cancel</button>
           <button
             onClick={handleSave}
-            className="px-5 py-2 text-[13px] font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+            disabled={missingPharmacyType}
+            title={missingPharmacyType ? 'Set a pharmacy inquiry type for every pharmacy entry first' : undefined}
+            className="px-5 py-2 text-[13px] font-semibold bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-blue-600 transition-colors"
           >
             {mode === 'reassign' ? 'Reassign' : 'Assign Chain'} ({chain.length} dept{chain.length !== 1 ? 's' : ''})
           </button>
@@ -1710,7 +1725,7 @@ function ManualFormModal({
   const [phone, setPhone] = useState('')
   const [comment, setComment] = useState('')
 
-  const isValid = patientId.trim() !== '' && phone.trim() !== '' && comment.trim() !== ''
+  const isValid = comment.trim() !== ''
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -1734,13 +1749,13 @@ function ManualFormModal({
         <form id="manual-inquiry-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
           <div>
             <label htmlFor="manual-patient-id" className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-              Patient ID <span className="text-red-500">*</span>
+              Patient ID
             </label>
             <input
               id="manual-patient-id"
               value={patientId}
               onChange={e => setPatientId(e.target.value)}
-              placeholder="e.g. HN00123"
+              placeholder="e.g. HN00123 (optional)"
               autoFocus
               className="mt-1.5 w-full text-[13px] border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-gray-300"
             />
@@ -1759,13 +1774,13 @@ function ManualFormModal({
 
           <div>
             <label htmlFor="manual-phone" className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-              Phone Number <span className="text-red-500">*</span>
+              Phone Number
             </label>
             <input
               id="manual-phone"
               value={phone}
               onChange={e => setPhone(e.target.value)}
-              placeholder="e.g. 0812345678"
+              placeholder="e.g. 0812345678 (optional)"
               className="mt-1.5 w-full text-[13px] border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-gray-300"
             />
           </div>
@@ -1827,30 +1842,30 @@ function ManualPage({
   onReturn: (c: Contact) => void
 }) {
   const manualContacts = contacts.filter(c => c.source === 'Manual')
-  const [activeTab, setActiveTab] = useState<'needsReply' | 'all'>('all')
   const [statusFilter, setStatusFilter] = useState<'All' | Status>('All')
   const [assigneeFilter, setAssigneeFilter] = useState<'All' | 'Unassigned' | Dept>('All')
+  const [priorityFilter, setPriorityFilter] = useState<'All' | Priority>('All')
   const [firstContactDateFilter, setFirstContactDateFilter] = useState('')
   const [lastActiveDateFilter, setLastActiveDateFilter] = useState('')
   const [search, setSearch] = useState('')
 
   const clearFilters = () => {
-    setActiveTab('all')
     setStatusFilter('All')
     setAssigneeFilter('All')
+    setPriorityFilter('All')
     setFirstContactDateFilter('')
     setLastActiveDateFilter('')
     setSearch('')
   }
 
   const visible = manualContacts.filter(c => {
-    if (activeTab === 'needsReply' && c.status !== 'Open') return false
     if (statusFilter !== 'All' && c.status !== statusFilter) return false
     if (assigneeFilter === 'Unassigned' && c.chain.length > 0) return false
     if (assigneeFilter !== 'All' && assigneeFilter !== 'Unassigned') {
       const active = c.chain[c.currentChainIndex]
       if (!active || active.dept !== assigneeFilter) return false
     }
+    if (priorityFilter !== 'All' && c.priority !== priorityFilter) return false
     if (!matchesLooseDate(c.firstContact, firstContactDateFilter)) return false
     if (!matchesLooseDate(c.lastActive, lastActiveDateFilter)) return false
     if (search) {
@@ -1876,7 +1891,7 @@ function ManualPage({
   const handleAdd = (data: ManualFormData) => {
     onAdd(data)
     setShowForm(false)
-    setToast(`Inquiry created for ${data.patientId}`)
+    setToast(`Inquiry created for ${data.patientId.trim() || data.name.trim() || 'new contact'}`)
     setTimeout(() => setToast(null), 3500)
   }
 
@@ -1954,7 +1969,7 @@ function ManualPage({
           </div>
           <p className="text-[13px] text-gray-400 mb-4">Manual inquiries registered by phone, in the same workflow as Telegram/Facebook.</p>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
             <div>
               <label htmlFor="manual-filter-contact-name" className="text-[11px] font-semibold text-gray-500">Contact Name</label>
               <div className="relative mt-1">
@@ -2013,6 +2028,20 @@ function ManualPage({
             </div>
 
             <div>
+              <label htmlFor="manual-filter-priority" className="text-[11px] font-semibold text-gray-500">Priority</label>
+              <select
+                id="manual-filter-priority"
+                value={priorityFilter}
+                onChange={e => setPriorityFilter(e.target.value as 'All' | Priority)}
+                className="mt-1 w-full text-[13px] border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+              >
+                <option value="All">All</option>
+                <option value="Normal">Normal</option>
+                <option value="Prio">Prio</option>
+              </select>
+            </div>
+
+            <div>
               <label htmlFor="manual-filter-last-active-date" className="text-[11px] font-semibold text-gray-500">Last Active Date</label>
               <div className="relative mt-1">
                 <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
@@ -2033,30 +2062,6 @@ function ManualPage({
           >
             <RefreshIcon className="w-3.5 h-3.5" /> Clear
           </button>
-
-          {/* Tabs */}
-          <div className="flex items-center gap-6 border-b border-gray-100 mt-4">
-            <button
-              onClick={() => setActiveTab('needsReply')}
-              className={`flex items-center gap-2 pb-2.5 text-[13px] font-semibold border-b-2 transition-colors ${
-                activeTab === 'needsReply' ? 'text-gray-900 border-blue-500' : 'text-gray-400 border-transparent hover:text-gray-600'
-              }`}
-            >
-              Needs Reply
-              <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">{counts.Open}</span>
-              <HelpCircleIcon className="w-3.5 h-3.5 text-gray-300" />
-            </button>
-            <button
-              onClick={() => setActiveTab('all')}
-              className={`flex items-center gap-2 pb-2.5 text-[13px] font-semibold border-b-2 transition-colors ${
-                activeTab === 'all' ? 'text-gray-900 border-blue-500' : 'text-gray-400 border-transparent hover:text-gray-600'
-              }`}
-            >
-              All Contacts
-              <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-gray-200 text-gray-600 text-[10px] font-bold flex items-center justify-center">{counts.Total}</span>
-              <HelpCircleIcon className="w-3.5 h-3.5 text-gray-300" />
-            </button>
-          </div>
         </div>
 
         <div className="flex items-center justify-end mb-3">
@@ -2105,6 +2110,7 @@ export default function App() {
   const [statusFilter, setStatusFilter] = useState<'All' | Status>('All')
   const [providerFilter, setProviderFilter] = useState<'All' | 'Telegram' | 'Facebook'>('All')
   const [assigneeFilter, setAssigneeFilter] = useState<'All' | 'Unassigned' | Dept>('All')
+  const [priorityFilter, setPriorityFilter] = useState<'All' | Priority>('All')
   const [firstContactDateFilter, setFirstContactDateFilter] = useState('')
   const [lastActiveDateFilter, setLastActiveDateFilter] = useState('')
   const [pharmFilter, setPharmFilter] = useState<'All' | PharmacyType>('All')
@@ -2116,6 +2122,7 @@ export default function App() {
     setStatusFilter('All')
     setProviderFilter('All')
     setAssigneeFilter('All')
+    setPriorityFilter('All')
     setFirstContactDateFilter('')
     setLastActiveDateFilter('')
     setSearch('')
@@ -2179,14 +2186,15 @@ export default function App() {
     const now = new Date()
     const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
     const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+    const resolvedName = data.name.trim() || data.patientId.trim() || 'Unknown'
     const newContact: Contact = {
       id: `manual-${now.getTime()}`,
-      name: data.name || data.patientId,
-      initials: initialsFor(data.name, data.patientId),
+      name: resolvedName,
+      initials: initialsFor(resolvedName, data.patientId),
       color: AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)],
       source: 'Manual',
-      hnNumber: data.patientId,
-      phone: data.phone,
+      hnNumber: data.patientId.trim() || undefined,
+      phone: data.phone.trim() || undefined,
       lastMessage: data.comment,
       firstContact: dateStr,
       status: 'Open',
@@ -2222,6 +2230,7 @@ export default function App() {
       const active = c.chain[c.currentChainIndex]
       if (!active || active.dept !== assigneeFilter) return false
     }
+    if (priorityFilter !== 'All' && c.priority !== priorityFilter) return false
     if (!matchesLooseDate(c.firstContact, firstContactDateFilter)) return false
     if (!matchesLooseDate(c.lastActive, lastActiveDateFilter)) return false
     if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false
@@ -2398,7 +2407,7 @@ export default function App() {
               </div>
               <p className="text-[13px] text-gray-400 mb-4">Manage customer messages, assignments, and handoffs in one clean workspace.</p>
 
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 mb-4">
                 <div>
                   <label htmlFor="filter-contact-name" className="text-[11px] font-semibold text-gray-500">Contact Name</label>
                   <div className="relative mt-1">
@@ -2467,6 +2476,20 @@ export default function App() {
                     <option value="All">All</option>
                     <option value="Unassigned">Unassigned</option>
                     {ALL_DEPTS.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="filter-priority" className="text-[11px] font-semibold text-gray-500">Priority</label>
+                  <select
+                    id="filter-priority"
+                    value={priorityFilter}
+                    onChange={e => setPriorityFilter(e.target.value as 'All' | Priority)}
+                    className="mt-1 w-full text-[13px] border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                  >
+                    <option value="All">All</option>
+                    <option value="Normal">Normal</option>
+                    <option value="Prio">Prio</option>
                   </select>
                 </div>
 
