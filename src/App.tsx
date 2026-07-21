@@ -7,7 +7,7 @@ type ViewAs = 'PFSD' | Dept
 type Status = 'Open' | 'Pending' | 'Closed'
 type Priority = 'Normal' | 'Prio'
 type PharmacyType = 'Question' | 'Medicine only'
-type ChainEntryStatus = 'waiting' | 'active' | 'completed' | 'returned'
+type ChainEntryStatus = 'waiting' | 'active' | 'waitingPatient' | 'completed' | 'returned'
 
 interface ChainEntry {
   dept: Dept
@@ -127,10 +127,11 @@ const STATUS_STYLE: Record<Status, { pill: string }> = {
 }
 
 const ENTRY_BADGE: Record<ChainEntryStatus, string> = {
-  waiting:   'bg-gray-100 text-gray-500 border-gray-200',
-  active:    'bg-amber-100 text-amber-700 border-amber-300',
-  completed: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  returned:  'bg-red-100 text-red-700 border-red-200',
+  waiting:        'bg-gray-100 text-gray-500 border-gray-200',
+  active:         'bg-blue-100 text-blue-700 border-blue-300',
+  waitingPatient: 'bg-purple-100 text-purple-700 border-purple-300',
+  completed:      'bg-emerald-100 text-emerald-700 border-emerald-200',
+  returned:       'bg-red-100 text-red-700 border-red-200',
 }
 
 // Dot + text tone for the Handoff Chain column — status reads from a small dot
@@ -138,10 +139,11 @@ const ENTRY_BADGE: Record<ChainEntryStatus, string> = {
 // still 'waiting') gets its own amber tone via CURRENT_WAITING_TONE so it reads
 // differently from a dept further down the chain that hasn't been reached yet.
 const ENTRY_TONE: Record<ChainEntryStatus, { dot: string; text: string }> = {
-  waiting:   { dot: 'bg-gray-300',    text: 'text-gray-400' },
-  active:    { dot: 'bg-blue-500',    text: 'text-blue-700' },
-  completed: { dot: 'bg-emerald-500', text: 'text-emerald-700' },
-  returned:  { dot: 'bg-red-500',     text: 'text-red-700' },
+  waiting:        { dot: 'bg-gray-300',    text: 'text-gray-400' },
+  active:         { dot: 'bg-blue-500',    text: 'text-blue-700' },
+  waitingPatient: { dot: 'bg-purple-500',  text: 'text-purple-700' },
+  completed:      { dot: 'bg-emerald-500', text: 'text-emerald-700' },
+  returned:       { dot: 'bg-red-500',     text: 'text-red-700' },
 }
 const CURRENT_WAITING_TONE = { dot: 'bg-amber-500', text: 'text-amber-700' }
 
@@ -167,17 +169,19 @@ function matchesLooseDate(dateStr: string, isoDate: string): boolean {
 // 'completed' entries are never current, so that row is unused but keeps the
 // Record total so class strings stay literal for Tailwind's JIT scanner.
 const CURRENT_ENTRY_TONE: Record<ChainEntryStatus, { badge: string; dot: string }> = {
-  waiting:   { badge: 'bg-amber-100 text-amber-700',    dot: 'bg-amber-500' },
-  active:    { badge: 'bg-blue-100 text-blue-700',      dot: 'bg-blue-500' },
-  completed: { badge: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-500' },
-  returned:  { badge: 'bg-red-100 text-red-700',        dot: 'bg-red-500' },
+  waiting:        { badge: 'bg-amber-100 text-amber-700',    dot: 'bg-amber-500' },
+  active:         { badge: 'bg-blue-100 text-blue-700',      dot: 'bg-blue-500' },
+  waitingPatient: { badge: 'bg-purple-100 text-purple-700',  dot: 'bg-purple-500' },
+  completed:      { badge: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-500' },
+  returned:       { badge: 'bg-red-100 text-red-700',        dot: 'bg-red-500' },
 }
 
 const ENTRY_STATUS_LABEL: Record<ChainEntryStatus, string> = {
-  waiting:   'Pending',
-  active:    'In Progress',
-  completed: 'Complete',
-  returned:  'Return',
+  waiting:        'Pending',
+  active:         'In Progress',
+  waitingPatient: 'Waiting patient',
+  completed:      'Complete',
+  returned:       'Return',
 }
 
 // ─── Shared components ────────────────────────────────────────────────────────
@@ -225,19 +229,29 @@ function StatusBadge({ status }: { status: Status }) {
 // Destination-dot marker for the department breakdown timeline. The "current"
 // node pulses — that's the one PFSD needs to see, whether it's actively being
 // worked (active/returned) or just handed off and waiting on the dept to start.
-function StepDot({ status, isCurrent }: { status: ChainEntryStatus; isCurrent: boolean }) {
+function StepDot({ status, isCurrent, isOrigin }: { status: ChainEntryStatus; isCurrent: boolean; isOrigin?: boolean }) {
   if (status === 'completed') {
     return (
-      <span className="relative z-10 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 text-[10px] font-bold leading-none">
+      <span className={`relative z-10 w-5 h-5 rounded-full text-white flex items-center justify-center shrink-0 text-[10px] font-bold leading-none ${isOrigin ? 'bg-slate-400' : 'bg-emerald-500'}`}>
         ✓
       </span>
     )
   }
   if (status === 'active') {
+    // Origin (PFSD) gets an indigo pulse instead of blue, so its "active" reads
+    // as "waiting on admin" rather than "a department is actively working it".
     return (
       <span className="relative z-10 w-5 h-5 flex items-center justify-center shrink-0">
-        <span className="absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-60 animate-ping" />
-        <span className="relative w-2.5 h-2.5 rounded-full bg-blue-500 ring-4 ring-blue-100" />
+        <span className={`absolute inline-flex h-full w-full rounded-full opacity-60 animate-ping ${isOrigin ? 'bg-indigo-400' : 'bg-blue-400'}`} />
+        <span className={`relative w-2.5 h-2.5 rounded-full ring-4 ${isOrigin ? 'bg-indigo-500 ring-indigo-100' : 'bg-blue-500 ring-blue-100'}`} />
+      </span>
+    )
+  }
+  if (status === 'waitingPatient') {
+    return (
+      <span className="relative z-10 w-5 h-5 flex items-center justify-center shrink-0">
+        <span className="absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-60 animate-ping" />
+        <span className="relative w-2.5 h-2.5 rounded-full bg-purple-500 ring-4 ring-purple-100" />
       </span>
     )
   }
@@ -670,10 +684,14 @@ function AssignPopup({
       return next
     })
 
-  // Reassign unlocks the returned entry itself (currentChainIndex), instead of
-  // only what comes after it, so PFSD can redirect it — edit its note, swap it
-  // out, or reorder — the same way they'd build the chain in the first place.
-  const firstEditable = mode === 'reassign' ? contact.currentChainIndex : contact.currentChainIndex + 1
+  // An entry is editable while PFSD hasn't handed it off yet — status 'waiting',
+  // whether that's the up-next entry or one further down the chain — so its
+  // note, position, and presence in the chain can still change. Reassign also
+  // unlocks the returned entry itself (currentChainIndex), so PFSD can redirect
+  // it the same way they'd build the chain in the first place. Anything being
+  // actively worked (active/waitingPatient) or already completed stays locked.
+  const isEntryEditable = (entry: ChainEntry, i: number) =>
+    entry.entryStatus === 'waiting' || (mode === 'reassign' && i === contact.currentChainIndex && entry.entryStatus === 'returned')
 
   const updateComment = (i: number, v: string) =>
     setChain(p => p.map((e, j) => j === i ? { ...e, comment: v } : e))
@@ -722,7 +740,7 @@ function AssignPopup({
 
   const handleSave = () => {
     const updatedChain = chain.map((e, i) => {
-      if (i < firstEditable) return e
+      if (!isEntryEditable(e, i)) return e
       return { ...e, entryStatus: 'waiting' as ChainEntryStatus }
     })
     const newIdx = contact.currentChainIndex === -1 && updatedChain.length > 0 ? 0 : contact.currentChainIndex
@@ -752,7 +770,7 @@ function AssignPopup({
           )}
 
           {chain.map((entry, i) => {
-            const isLocked = i < firstEditable
+            const isLocked = !isEntryEditable(entry, i)
             const isDraggable = !isLocked
             // A dept that's still waiting starts with its note collapsed to a label;
             // any other editable entry (e.g. the returned dept during reassign) keeps
@@ -768,9 +786,10 @@ function AssignPopup({
                 onDragOver={e => isDraggable && handleDragOver(e, i)}
                 onDrop={handleDrop}
                 className={`rounded-xl border p-4 space-y-3 transition-all ${
-                  entry.entryStatus === 'active'    ? 'border-amber-300 bg-amber-50/40' :
-                  entry.entryStatus === 'completed' ? 'border-gray-200 bg-gray-50/60 opacity-70' :
-                  entry.entryStatus === 'returned'  ? 'border-red-200 bg-red-50/40' :
+                  entry.entryStatus === 'active'         ? 'border-blue-300 bg-blue-50/40' :
+                  entry.entryStatus === 'waitingPatient' ? 'border-purple-300 bg-purple-50/40' :
+                  entry.entryStatus === 'completed'      ? 'border-gray-200 bg-gray-50/60 opacity-70' :
+                  entry.entryStatus === 'returned'       ? 'border-red-200 bg-red-50/40' :
                   'border-gray-200 bg-white'
                 } ${isDraggable ? 'cursor-grab active:cursor-grabbing' : ''}`}
               >
@@ -781,7 +800,7 @@ function AssignPopup({
                   <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-[11px] flex items-center justify-center font-bold shrink-0">{i + 1}</span>
                   <span className="text-[13px] font-semibold text-gray-900">{entry.dept}</span>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full border font-semibold ${ENTRY_BADGE[entry.entryStatus]}`}>
-                    {entry.entryStatus}
+                    {ENTRY_STATUS_LABEL[entry.entryStatus]}
                   </span>
                   {isLocked
                     ? <span className="ml-auto text-[11px] text-gray-400">Read-only</span>
@@ -1073,10 +1092,11 @@ function DetailPane({
           <div>
             {steps.map((step, idx) => {
               const isLast = idx === steps.length - 1
+              const isOrigin = step.key === 'pfsd'
               // "Current" is whichever step is holding the baton right now — the dept
               // at currentChainIndex (even before it clicks Start, i.e. still 'waiting'),
               // or PFSD's own step when nothing is assigned/everything has wrapped up.
-              const isCurrent = step.key === 'pfsd' ? step.status === 'active' : step.chainIndex === contact.currentChainIndex
+              const isCurrent = isOrigin ? step.status === 'active' : step.chainIndex === contact.currentChainIndex
               const removable = step.chainIndex !== undefined && step.status === 'waiting'
               const labelClass = stepLabelClass(step.status, isCurrent)
               const comment = step.chainIndex !== undefined ? contact.chain[step.chainIndex].comment : ''
@@ -1085,30 +1105,45 @@ function DetailPane({
               // PFSD isn't a department, so "In Progress" reads oddly for its two very
               // different "active" moments — reword just for that row; dept rows keep
               // the shared ENTRY_STATUS_LABEL vocabulary.
-              const statusLabel = step.key === 'pfsd'
+              const statusLabel = isOrigin
                 ? (contact.chain.length === 0 ? 'Needs assignment' : 'Ready to close')
                 : ENTRY_STATUS_LABEL[step.status]
               // The Return Details card above already states dept + reason in full for
               // the returned entry — the row keeps its red pulsing dot but skips the
               // redundant "Return" text pill.
               const showCurrentBadge = isCurrent && step.status !== 'returned'
+              // Origin's badge/dot use indigo (not the shared blue "in progress" tone)
+              // so its "active" reads as "waiting on admin", distinct from a department
+              // actively working the case.
+              const badgeTone = isOrigin && step.status === 'active'
+                ? { badge: 'bg-indigo-100 text-indigo-700', dot: 'bg-indigo-500' }
+                : CURRENT_ENTRY_TONE[step.status]
               return (
                 <div key={step.key} className="relative flex gap-3">
                   {!isLast && (
                     <span className={`absolute left-[9px] top-5 bottom-0 w-0.5 ${step.status === 'completed' ? 'bg-emerald-400' : 'bg-gray-200'}`} />
                   )}
-                  <StepDot status={step.status} isCurrent={isCurrent} />
+                  <StepDot status={step.status} isCurrent={isCurrent} isOrigin={isOrigin} />
                   <div className={`flex-1 min-w-0 ${isLast ? 'pb-0.5' : 'pb-5'}`}>
                     <div className="flex items-center justify-between gap-2">
-                      <span className={`text-[12.5px] truncate ${labelClass}`}>
-                        {step.label}
+                      <span className="flex items-center gap-1.5 min-w-0">
+                        <span className={`text-[12.5px] truncate ${labelClass}`}>
+                          {step.label}
+                        </span>
+                        {/* Marks this row as the admin/origin step, not a real department,
+                            since it's the only one PFSD staff might mistake for one. */}
+                        {isOrigin && (
+                          <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-gray-400 bg-gray-100 px-1.5 py-px rounded">
+                            Admin
+                          </span>
+                        )}
                       </span>
                       <div className="flex items-center gap-2 shrink-0">
                         {/* Status, right-aligned in the row — current gets a live pulsing badge,
                             an unreached department is explicitly called "Not started". */}
                         {showCurrentBadge && (
-                          <span className={`inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 ${CURRENT_ENTRY_TONE[step.status].badge}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${CURRENT_ENTRY_TONE[step.status].dot}`} />
+                          <span className={`inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 ${badgeTone.badge}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${badgeTone.dot}`} />
                             {statusLabel}
                           </span>
                         )}
@@ -1127,8 +1162,10 @@ function DetailPane({
                             {isCommentOpen ? '▲' : '▼'}
                           </button>
                         )}
-                        {/* Remove is always shown, for a uniform status rail — enabled (red) only
-                            for a department PFSD hasn't reached yet; disabled (faint gray) otherwise. */}
+                        {/* Remove is shown for a uniform status rail on dept rows — enabled (red) only
+                            for a department PFSD hasn't reached yet, disabled (faint gray) otherwise.
+                            Origin is never removable, so it's skipped instead of shown disabled. */}
+                        {!isOrigin && (
                         <button
                           onClick={() => removable && removeDeptFromChain(step.chainIndex!)}
                           disabled={!removable}
@@ -1139,6 +1176,7 @@ function DetailPane({
                         >
                           <MinusCircleIcon className="w-3.5 h-3.5" />
                         </button>
+                        )}
                       </div>
                     </div>
                     {/* Pharmacy inquiry type, shown under the dept name — same pattern as the Telegram/Facebook source tag in the contact list */}
@@ -1302,6 +1340,8 @@ function ContactsTable({
   onRowClick,
   updateContact,
   handleStart,
+  handleWaitingPatient,
+  handleResume,
   handleMarkComplete,
   onReturn,
   useIconActions = false,
@@ -1312,11 +1352,23 @@ function ContactsTable({
   onRowClick: (c: Contact) => void
   updateContact: (c: Contact) => void
   handleStart: (c: Contact) => void
+  handleWaitingPatient: (c: Contact) => void
+  handleResume: (c: Contact) => void
   handleMarkComplete: (c: Contact) => void
   onReturn: (c: Contact) => void
   useIconActions?: boolean
 }) {
   const [messageContact, setMessageContact] = useState<Contact | null>(null)
+
+  const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set())
+  const isNoteExpanded = (id: string) => expandedNotes.has(id)
+  const toggleNote = (id: string) =>
+    setExpandedNotes(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
 
   const [notesContactId, setNotesContactId] = useState<string | null>(null)
   const notesContact = contacts.find(c => c.id === notesContactId) ?? null
@@ -1341,7 +1393,7 @@ function ContactsTable({
                 <th className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-wide px-4 py-3 whitespace-nowrap">Assignees</th>
               )}
               {viewAs !== 'PFSD' && (
-                <th className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-wide px-4 py-3 whitespace-nowrap">PFSD Note</th>
+                <th className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-wide px-4 py-3 whitespace-nowrap min-w-[220px]">PFSD Note</th>
               )}
               {viewAs === 'Pharmacy' && (
                 <th className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-wide px-4 py-3">Type</th>
@@ -1358,10 +1410,6 @@ function ContactsTable({
               const activeEntry = contact.chain[contact.currentChainIndex]
               // Same tone rule as the Handoff Chain dots, so the two stay in sync.
               const activeTone = activeEntry && (activeEntry.entryStatus === 'waiting' ? CURRENT_WAITING_TONE : ENTRY_TONE[activeEntry.entryStatus])
-              // Mirrors DetailPane's pfsdStatus: PFSD reads as handed-off (green) whenever
-              // a dept is holding the case (including one that just returned it), and as
-              // PFSD's own turn (blue) otherwise.
-              const pfsdStatus: ChainEntryStatus = contact.currentChainIndex >= 0 ? 'completed' : 'active'
               const pharmEntry = contact.chain.find(e => e.dept === 'Pharmacy')
               const isSelected = paneContact?.id === contact.id
 
@@ -1435,7 +1483,7 @@ function ContactsTable({
                   </td>
 
                   {/* Last message */}
-                  <td className="px-4 py-3 max-w-[180px]">
+                  <td className="px-4 py-3 max-w-[130px]">
                     <p className="text-[13px] text-gray-600 truncate">{contact.lastMessage}</p>
                   </td>
 
@@ -1455,10 +1503,6 @@ function ContactsTable({
                       ) : (
                         <>
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-semibold text-[11px]">
-                              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${ENTRY_TONE[pfsdStatus].dot}`} />
-                              {'PFSD'}
-                            </span>
                             {contact.chain.map((entry, idx) => {
                               // Up-next dept (current pointer, hasn't clicked Start yet) gets its
                               // own amber tone so it's visibly distinct from a not-yet-reached dept
@@ -1488,11 +1532,26 @@ function ContactsTable({
 
                   {/* PFSD note (dept view) */}
                   {viewAs !== 'PFSD' && (
-                    <td className="px-4 py-3 max-w-[200px]">
+                    <td className="px-4 py-3 min-w-[220px] max-w-[280px]">
                       {activeEntry?.comment ? (
-                        <p className="text-[12px] text-gray-700 bg-blue-50 border border-blue-100 px-2.5 py-1.5 rounded-lg leading-relaxed line-clamp-2" title={activeEntry.comment}>
-                          {activeEntry.comment}
-                        </p>
+                        <div className="relative group">
+                          <p className={`flex items-start gap-1.5 text-[12px] text-gray-700 bg-blue-50 border border-blue-100 px-2.5 py-1.5 rounded-lg leading-relaxed ${activeEntry.comment.length > 80 ? 'pb-4' : ''}`}>
+                            <ChatBubbleIcon className="w-3 h-3 mt-0.5 text-blue-400 shrink-0" />
+                            <span className={isNoteExpanded(contact.id) ? '' : 'line-clamp-2'}>{activeEntry.comment}</span>
+                          </p>
+                          {/* Only long notes need it — short ones already fit in two lines,
+                              so the toggle would just be visual noise for those rows. Tucked
+                              into the corner and hidden until hover so it doesn't compete
+                              with the note text itself. */}
+                          {activeEntry.comment.length > 80 && (
+                            <button
+                              onClick={() => toggleNote(contact.id)}
+                              className="absolute bottom-1 right-1.5 text-[10px] font-semibold text-blue-600 bg-blue-50 px-1 rounded opacity-0 group-hover:opacity-100 hover:text-blue-800 transition-opacity"
+                            >
+                              {isNoteExpanded(contact.id) ? 'Show less' : 'Show more'}
+                            </button>
+                          )}
+                        </div>
                       ) : (
                         <span className="text-[12px] text-gray-300">No note from PFSD</span>
                       )}
@@ -1530,15 +1589,53 @@ function ContactsTable({
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center gap-1.5">
                         {activeEntry?.entryStatus === 'waiting' && (
-                          <button
-                            onClick={() => handleStart(contact)}
-                            className="px-2.5 py-1.5 text-[11px] font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
-                          >
-                            Start
-                          </button>
+                          <>
+                            <button
+                              onClick={() => handleStart(contact)}
+                              className="px-2.5 py-1.5 text-[11px] font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+                            >
+                              Start
+                            </button>
+                            {/* Return before Start too — PFSD can mis-assign a department,
+                                so the dept shouldn't have to start work just to send it back. */}
+                            <button
+                              onClick={() => onReturn(contact)}
+                              className="px-2.5 py-1.5 text-[11px] font-semibold bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+                            >
+                              Return
+                            </button>
+                          </>
                         )}
                         {activeEntry?.entryStatus === 'active' && (
                           <>
+                            <button
+                              onClick={() => handleWaitingPatient(contact)}
+                              className="px-2.5 py-1.5 text-[11px] font-semibold bg-purple-50 text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors whitespace-nowrap"
+                            >
+                              Waiting patient
+                            </button>
+                            <button
+                              onClick={() => handleMarkComplete(contact)}
+                              className="px-2.5 py-1.5 text-[11px] font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors whitespace-nowrap"
+                            >
+                              Mark complete
+                            </button>
+                            <button
+                              onClick={() => onReturn(contact)}
+                              className="px-2.5 py-1.5 text-[11px] font-semibold bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+                            >
+                              Return
+                            </button>
+                          </>
+                        )}
+                        {activeEntry?.entryStatus === 'waitingPatient' && (
+                          <>
+                            <button
+                              onClick={() => handleResume(contact)}
+                              className="px-2.5 py-1.5 text-[11px] font-semibold bg-blue-50 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors whitespace-nowrap"
+                            >
+                              Resume
+                            </button>
                             <button
                               onClick={() => handleMarkComplete(contact)}
                               className="px-2.5 py-1.5 text-[11px] font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors whitespace-nowrap"
@@ -1713,6 +1810,8 @@ function ManualPage({
   onRowClick,
   updateContact,
   handleStart,
+  handleWaitingPatient,
+  handleResume,
   handleMarkComplete,
   onReturn,
 }: {
@@ -1722,6 +1821,8 @@ function ManualPage({
   onRowClick: (c: Contact) => void
   updateContact: (c: Contact) => void
   handleStart: (c: Contact) => void
+  handleWaitingPatient: (c: Contact) => void
+  handleResume: (c: Contact) => void
   handleMarkComplete: (c: Contact) => void
   onReturn: (c: Contact) => void
 }) {
@@ -1969,6 +2070,8 @@ function ManualPage({
           onRowClick={onRowClick}
           updateContact={updateContact}
           handleStart={handleStart}
+          handleWaitingPatient={handleWaitingPatient}
+          handleResume={handleResume}
           handleMarkComplete={handleMarkComplete}
           onReturn={onReturn}
         />
@@ -2028,6 +2131,22 @@ export default function App() {
       i === contact.currentChainIndex ? { ...e, entryStatus: 'active' as ChainEntryStatus } : e
     )
     const log = `${contact.chain[contact.currentChainIndex]?.dept} started working · just now`
+    updateContact({ ...contact, chain: newChain, activityLog: [log, ...contact.activityLog] })
+  }
+
+  const handleWaitingPatient = (contact: Contact) => {
+    const newChain = contact.chain.map((e, i) =>
+      i === contact.currentChainIndex ? { ...e, entryStatus: 'waitingPatient' as ChainEntryStatus } : e
+    )
+    const log = `${contact.chain[contact.currentChainIndex]?.dept} is waiting on patient · just now`
+    updateContact({ ...contact, chain: newChain, activityLog: [log, ...contact.activityLog] })
+  }
+
+  const handleResume = (contact: Contact) => {
+    const newChain = contact.chain.map((e, i) =>
+      i === contact.currentChainIndex ? { ...e, entryStatus: 'active' as ChainEntryStatus } : e
+    )
+    const log = `${contact.chain[contact.currentChainIndex]?.dept} resumed work · just now`
     updateContact({ ...contact, chain: newChain, activityLog: [log, ...contact.activityLog] })
   }
 
@@ -2183,6 +2302,8 @@ export default function App() {
             onRowClick={c => setPaneContact(paneContact?.id === c.id ? null : c)}
             updateContact={updateContact}
             handleStart={handleStart}
+            handleWaitingPatient={handleWaitingPatient}
+            handleResume={handleResume}
             handleMarkComplete={handleMarkComplete}
             onReturn={c => setReturnContact(c)}
           />
@@ -2424,6 +2545,8 @@ export default function App() {
               onRowClick={c => setPaneContact(paneContact?.id === c.id ? null : c)}
               updateContact={updateContact}
               handleStart={handleStart}
+              handleWaitingPatient={handleWaitingPatient}
+              handleResume={handleResume}
               handleMarkComplete={handleMarkComplete}
               onReturn={c => setReturnContact(c)}
               useIconActions
@@ -2453,7 +2576,7 @@ export default function App() {
           onClose={() => setAssignContact(null)}
           onSave={(chain, currentIdx) => {
             const log = assignMode === 'reassign' ? 'Reassigned by PFSD · just now' : 'Chain updated · just now'
-            updateContact({ ...assignContact, chain, currentChainIndex: currentIdx, status: chain.length > 0 && assignContact.status === 'Open' ? 'Pending' : assignContact.status, activityLog: [log, ...assignContact.activityLog] })
+            updateContact({ ...assignContact, chain, currentChainIndex: currentIdx, status: chain.length > 0 ? 'Pending' : assignContact.status, activityLog: [log, ...assignContact.activityLog] })
             setAssignContact(null)
           }}
         />
