@@ -880,7 +880,7 @@ function ContactsTable({
               <th className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-wide px-4 py-3 whitespace-nowrap">First Contact</th>
               <th className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-wide px-4 py-3">Status</th>
               {viewAs === 'PFSD' && (
-                <th className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-wide px-4 py-3 whitespace-nowrap">Handoff Chain</th>
+                <th className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-wide px-4 py-3 whitespace-nowrap">Assignees</th>
               )}
               {viewAs !== 'PFSD' && (
                 <th className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-wide px-4 py-3 whitespace-nowrap">PFSD Note</th>
