@@ -517,6 +517,17 @@ function CalendarIcon({ className }: { className?: string }) {
   )
 }
 
+// Replaces the browser's default <select> arrow, which sits flush against the
+// edge with almost no breathing room — this one gets real spacing via the
+// select's own pr-8 instead.
+function ChevronDownIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M5.5 8l4.5 4.5L14.5 8" />
+    </svg>
+  )
+}
+
 function RefreshIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -1630,11 +1641,15 @@ function ContactsTable({
                               )
                             })}
                           </div>
-                          {activeEntry && activeTone && (
+                          {activeEntry && activeTone ? (
                             <p className={`mt-1.5 text-[11px] whitespace-nowrap ${activeTone.text}`}>
                               {activeEntry.entryStatus === 'returned'
                                 ? `Return from ${activeEntry.dept}`
                                 : `${ENTRY_STATUS_LABEL[activeEntry.entryStatus]} at ${activeEntry.dept}`}
+                            </p>
+                          ) : contact.chain.every(e => e.entryStatus === 'completed') && (
+                            <p className={`mt-1.5 text-[11px] whitespace-nowrap ${HUE.emerald.text}`}>
+                              All departments completed
                             </p>
                           )}
                         </>
@@ -1683,14 +1698,17 @@ function ContactsTable({
 
                   {/* Priority */}
                   <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                    <select
-                      value={contact.priority}
-                      onChange={e => updateContact({ ...contact, priority: e.target.value as Priority })}
-                      className={`text-[12px] border rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white font-medium cursor-pointer ${contact.priority === 'Prio' ? 'border-orange-300 text-orange-600 bg-orange-50' : 'border-gray-200 text-gray-600'}`}
-                    >
-                      <option value="Normal">Normal</option>
-                      <option value="Prio">Prio</option>
-                    </select>
+                    <div className="relative inline-block">
+                      <select
+                        value={contact.priority}
+                        onChange={e => updateContact({ ...contact, priority: e.target.value as Priority })}
+                        className={`text-[12px] border rounded-lg pl-2 pr-6 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white font-medium cursor-pointer appearance-none ${contact.priority === 'Prio' ? 'border-orange-300 text-orange-600 bg-orange-50' : 'border-gray-200 text-gray-600'}`}
+                      >
+                        <option value="Normal">Normal</option>
+                        <option value="Prio">Prio</option>
+                      </select>
+                      <ChevronDownIcon className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                    </div>
                   </td>
 
                   {/* Last active */}
@@ -2083,17 +2101,20 @@ function ManualPage({
 
             <div>
               <label htmlFor="manual-filter-status" className="text-[11px] font-semibold text-gray-500">Status</label>
-              <select
-                id="manual-filter-status"
-                value={statusFilter}
-                onChange={e => setStatusFilter(e.target.value as 'All' | Status)}
-                className="mt-1 w-full text-[13px] border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-              >
-                <option value="All">All</option>
-                <option value="Open">Open</option>
-                <option value="Pending">Pending</option>
-                <option value="Closed">Closed</option>
-              </select>
+              <div className="relative mt-1">
+                <select
+                  id="manual-filter-status"
+                  value={statusFilter}
+                  onChange={e => setStatusFilter(e.target.value as 'All' | Status)}
+                  className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                >
+                  <option value="All">All</option>
+                  <option value="Open">Open</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Closed">Closed</option>
+                </select>
+                <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+              </div>
             </div>
 
             <div>
@@ -2112,30 +2133,36 @@ function ManualPage({
 
             <div>
               <label htmlFor="manual-filter-assignee" className="text-[11px] font-semibold text-gray-500">Assignee</label>
-              <select
-                id="manual-filter-assignee"
-                value={assigneeFilter}
-                onChange={e => setAssigneeFilter(e.target.value as 'All' | 'Unassigned' | Dept)}
-                className="mt-1 w-full text-[13px] border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-              >
-                <option value="All">All</option>
-                <option value="Unassigned">Unassigned</option>
-                {ALL_DEPTS.map(d => <option key={d} value={d}>{d}</option>)}
-              </select>
+              <div className="relative mt-1">
+                <select
+                  id="manual-filter-assignee"
+                  value={assigneeFilter}
+                  onChange={e => setAssigneeFilter(e.target.value as 'All' | 'Unassigned' | Dept)}
+                  className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                >
+                  <option value="All">All</option>
+                  <option value="Unassigned">Unassigned</option>
+                  {ALL_DEPTS.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+                <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+              </div>
             </div>
 
             <div>
               <label htmlFor="manual-filter-priority" className="text-[11px] font-semibold text-gray-500">Priority</label>
-              <select
-                id="manual-filter-priority"
-                value={priorityFilter}
-                onChange={e => setPriorityFilter(e.target.value as 'All' | Priority)}
-                className="mt-1 w-full text-[13px] border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-              >
-                <option value="All">All</option>
-                <option value="Normal">Normal</option>
-                <option value="Prio">Prio</option>
-              </select>
+              <div className="relative mt-1">
+                <select
+                  id="manual-filter-priority"
+                  value={priorityFilter}
+                  onChange={e => setPriorityFilter(e.target.value as 'All' | Priority)}
+                  className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                >
+                  <option value="All">All</option>
+                  <option value="Normal">Normal</option>
+                  <option value="Prio">Prio</option>
+                </select>
+                <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+              </div>
             </div>
 
             <div>
@@ -2525,31 +2552,37 @@ export default function App() {
 
                 <div>
                   <label htmlFor="filter-status" className="text-[11px] font-semibold text-gray-500">Status</label>
-                  <select
-                    id="filter-status"
-                    value={statusFilter}
-                    onChange={e => setStatusFilter(e.target.value as 'All' | Status)}
-                    className="mt-1 w-full text-[13px] border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-                  >
-                    <option value="All">All</option>
-                    <option value="Open">Open</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Closed">Closed</option>
-                  </select>
+                  <div className="relative mt-1">
+                    <select
+                      id="filter-status"
+                      value={statusFilter}
+                      onChange={e => setStatusFilter(e.target.value as 'All' | Status)}
+                      className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                    >
+                      <option value="All">All</option>
+                      <option value="Open">Open</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Closed">Closed</option>
+                    </select>
+                    <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                  </div>
                 </div>
 
                 <div>
                   <label htmlFor="filter-provider" className="text-[11px] font-semibold text-gray-500">Provider</label>
-                  <select
-                    id="filter-provider"
-                    value={providerFilter}
-                    onChange={e => setProviderFilter(e.target.value as 'All' | 'Telegram' | 'Facebook')}
-                    className="mt-1 w-full text-[13px] border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-                  >
-                    <option value="All">All</option>
-                    <option value="Telegram">Telegram</option>
-                    <option value="Facebook">Facebook</option>
-                  </select>
+                  <div className="relative mt-1">
+                    <select
+                      id="filter-provider"
+                      value={providerFilter}
+                      onChange={e => setProviderFilter(e.target.value as 'All' | 'Telegram' | 'Facebook')}
+                      className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                    >
+                      <option value="All">All</option>
+                      <option value="Telegram">Telegram</option>
+                      <option value="Facebook">Facebook</option>
+                    </select>
+                    <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                  </div>
                 </div>
 
                 <div>
@@ -2568,30 +2601,36 @@ export default function App() {
 
                 <div>
                   <label htmlFor="filter-assignee" className="text-[11px] font-semibold text-gray-500">Assignee</label>
-                  <select
-                    id="filter-assignee"
-                    value={assigneeFilter}
-                    onChange={e => setAssigneeFilter(e.target.value as 'All' | 'Unassigned' | Dept)}
-                    className="mt-1 w-full text-[13px] border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-                  >
-                    <option value="All">All</option>
-                    <option value="Unassigned">Unassigned</option>
-                    {ALL_DEPTS.map(d => <option key={d} value={d}>{d}</option>)}
-                  </select>
+                  <div className="relative mt-1">
+                    <select
+                      id="filter-assignee"
+                      value={assigneeFilter}
+                      onChange={e => setAssigneeFilter(e.target.value as 'All' | 'Unassigned' | Dept)}
+                      className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                    >
+                      <option value="All">All</option>
+                      <option value="Unassigned">Unassigned</option>
+                      {ALL_DEPTS.map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                    <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                  </div>
                 </div>
 
                 <div>
                   <label htmlFor="filter-priority" className="text-[11px] font-semibold text-gray-500">Priority</label>
-                  <select
-                    id="filter-priority"
-                    value={priorityFilter}
-                    onChange={e => setPriorityFilter(e.target.value as 'All' | Priority)}
-                    className="mt-1 w-full text-[13px] border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-                  >
-                    <option value="All">All</option>
-                    <option value="Normal">Normal</option>
-                    <option value="Prio">Prio</option>
-                  </select>
+                  <div className="relative mt-1">
+                    <select
+                      id="filter-priority"
+                      value={priorityFilter}
+                      onChange={e => setPriorityFilter(e.target.value as 'All' | Priority)}
+                      className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                    >
+                      <option value="All">All</option>
+                      <option value="Normal">Normal</option>
+                      <option value="Prio">Prio</option>
+                    </select>
+                    <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                  </div>
                 </div>
 
                 <div>
