@@ -223,7 +223,7 @@ function Avatar({ initials, color, size = 36 }: { initials: string; color: strin
   return (
     <div
       style={{ width: size, height: size, backgroundColor: color, fontSize: size * 0.38 }}
-      className="rounded-full flex items-center justify-center text-white font-bold shrink-0 select-none"
+      className="rounded-full flex items-center justify-center text-white font-bold shrink-0 select-none shadow-sm"
     >
       {initials}
     </div>
@@ -528,12 +528,110 @@ function ChevronDownIcon({ className }: { className?: string }) {
   )
 }
 
+function SidebarToggleIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <rect x="3" y="4" width="14" height="12" rx="2" />
+      <line x1="8" y1="4" x2="8" y2="16" />
+    </svg>
+  )
+}
+
 function RefreshIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <path d="M4 10a6 6 0 0110-4.2M16 10a6 6 0 01-10 4.2" />
       <path d="M14 3v3h-3M6 17v-3h3" />
     </svg>
+  )
+}
+
+// ─── Sidebar module icons ─────────────────────────────────────────────────────
+
+function DashboardGridIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" className={className}>
+      <rect x="2.8" y="2.8" width="6.2" height="6.2" rx="1.3" />
+      <rect x="11" y="2.8" width="6.2" height="6.2" rx="1.3" />
+      <rect x="2.8" y="11" width="6.2" height="6.2" rx="1.3" />
+      <rect x="11" y="11" width="6.2" height="6.2" rx="1.3" />
+    </svg>
+  )
+}
+
+function MailIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <rect x="2.3" y="4.5" width="15.4" height="11" rx="1.6" />
+      <path d="M3 5.5l7 6 7-6" />
+    </svg>
+  )
+}
+
+function PillIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <g transform="rotate(-45 10 10)">
+        <rect x="3.2" y="7" width="13.6" height="6" rx="3" />
+        <line x1="10" y1="7" x2="10" y2="13" />
+      </g>
+    </svg>
+  )
+}
+
+function LifeBuoyIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="10" cy="10" r="7.2" />
+      <circle cx="10" cy="10" r="3.1" />
+      <path d="M4.9 4.9l2.9 2.9M15.1 4.9l-2.9 2.9M4.9 15.1l2.9-2.9M15.1 15.1l-2.9-2.9" />
+    </svg>
+  )
+}
+
+function UserGearIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="7.3" cy="6.8" r="3" />
+      <path d="M2.5 16.3c.5-2.9 2.5-4.8 4.8-4.8.7 0 1.35.17 1.93.47" />
+      <circle cx="14.7" cy="13.7" r="2.1" />
+      <path d="M14.7 10.7v.9M14.7 15.8v.9M17.7 13.7h-.9M12.6 13.7h-.9M16.6 11.6l-.65.65M13.45 14.75l-.65.65M16.6 15.8l-.65-.65M13.45 12.65l-.65-.65" />
+    </svg>
+  )
+}
+
+function ActivityPulseIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M2.5 10.5h3l1.8-4.8 3 9 1.8-4.2h4.4" />
+    </svg>
+  )
+}
+
+// Date filter that only accepts a value through the native picker — typing is
+// blocked, and the picker indicator is stretched invisibly over the whole
+// field (WebKit-only pseudo-element; Firefox falls back to its own icon on
+// the right, typing still blocked there too) so clicking anywhere opens it.
+// A real "Pick a date" placeholder is shown in its place since date inputs
+// don't support one natively.
+function DateFilterInput({ id, value, onChange }: { id: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="relative mt-1">
+      <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none z-10" />
+      {!value && (
+        <span className="absolute left-9 top-1/2 -translate-y-1/2 text-[13px] text-gray-300 pointer-events-none select-none">
+          Pick a date
+        </span>
+      )}
+      <input
+        id={id}
+        type="date"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        onKeyDown={e => e.preventDefault()}
+        className={`w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white cursor-pointer [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer ${value ? 'text-gray-700' : 'text-transparent'}`}
+      />
+    </div>
   )
 }
 
@@ -557,7 +655,7 @@ function StatCard({
   borderClass: string
 }) {
   return (
-    <div className={`flex items-center gap-3 bg-white rounded-xl border border-gray-100 border-l-4 ${borderClass} shadow-sm px-4 py-3 flex-1 min-w-[168px] shrink-0`}>
+    <div className={`flex items-center gap-3 bg-white rounded-xl border border-gray-100 border-l-4 ${borderClass} shadow-sm px-4 py-3 w-[190px] shrink-0`}>
       <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
         {icon}
       </div>
@@ -1471,6 +1569,8 @@ function ContactsTable({
   handleMarkComplete,
   onReturn,
   useIconActions = false,
+  bare = false,
+  lastMessageColumnLabel = 'Last Message',
 }: {
   contacts: Contact[]
   viewAs: ViewAs
@@ -1483,6 +1583,10 @@ function ContactsTable({
   handleMarkComplete: (c: Contact) => void
   onReturn: (c: Contact) => void
   useIconActions?: boolean
+  // Skips its own card chrome (border/shadow/rounded corners) when the caller
+  // already wraps it in one, so filters + table can share a single card.
+  bare?: boolean
+  lastMessageColumnLabel?: string
 }) {
   const [messageContact, setMessageContact] = useState<Contact | null>(null)
 
@@ -1506,33 +1610,33 @@ function ContactsTable({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+    <div className={bare ? '' : 'bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm'}>
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="border-b border-gray-100 bg-gray-50/60">
-              <th className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-wide px-4 py-3">Contact</th>
-              <th className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-wide px-4 py-3">Last Message</th>
-              <th className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-wide px-4 py-3 whitespace-nowrap">First Contact</th>
-              <th className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-wide px-4 py-3">Status</th>
+            <tr className="border-b border-gray-200 bg-gray-100">
+              <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Contact</th>
+              <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">{lastMessageColumnLabel}</th>
+              <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5 whitespace-nowrap">First Contact</th>
+              <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Status</th>
               {viewAs === 'PFSD' && (
-                <th className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-wide px-4 py-3 whitespace-nowrap">Assignees</th>
+                <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5 whitespace-nowrap">Assignees</th>
               )}
               {viewAs !== 'PFSD' && (
-                <th className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-wide px-4 py-3 whitespace-nowrap min-w-[220px]">PFSD Note</th>
+                <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5 whitespace-nowrap min-w-[220px]">PFSD Note</th>
               )}
               {viewAs === 'Pharmacy' && (
-                <th className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-wide px-4 py-3">Type</th>
+                <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Type</th>
               )}
-              <th className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-wide px-4 py-3">Priority</th>
-              <th className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-wide px-4 py-3 whitespace-nowrap">Last Active</th>
+              <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Priority</th>
+              <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5 whitespace-nowrap">Last Active</th>
               {viewAs !== 'PFSD' && (
-                <th className="text-left text-[11px] font-bold text-gray-400 uppercase tracking-wide px-4 py-3">Actions</th>
+                <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Actions</th>
               )}
             </tr>
           </thead>
           <tbody>
-            {contacts.map((contact, ri) => {
+            {contacts.map(contact => {
               const activeEntry = contact.chain[contact.currentChainIndex]
               const activeTone = activeEntry && ENTRY_TONE[activeEntry.entryStatus]
               const pharmEntry = contact.chain.find(e => e.dept === 'Pharmacy')
@@ -1544,10 +1648,10 @@ function ContactsTable({
                   onClick={() => viewAs === 'PFSD' && onRowClick(contact)}
                   className={`border-b border-gray-50 transition-colors ${
                     viewAs === 'PFSD' ? 'cursor-pointer' : ''
-                  } ${isSelected ? 'bg-blue-50/70 shadow-[inset_3px_0_0_0_#3b82f6]' : ri % 2 === 0 ? 'hover:bg-gray-50/60' : 'bg-gray-50/30 hover:bg-gray-100/40'}`}
+                  } ${isSelected ? 'bg-blue-50/70 shadow-[inset_3px_0_0_0_#3b82f6]' : 'hover:bg-gray-50/70'}`}
                 >
                   {/* Contact */}
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3.5">
                     {useIconActions ? (
                       <div className="flex items-center gap-3">
                         <Avatar initials={contact.initials} color={contact.color} />
@@ -1608,21 +1712,21 @@ function ContactsTable({
                   </td>
 
                   {/* Last message */}
-                  <td className="px-4 py-3 max-w-[130px]">
+                  <td className="px-4 py-3.5 max-w-[130px]">
                     <p className="text-[13px] text-gray-600 truncate">{contact.lastMessage}</p>
                   </td>
 
                   {/* First contact */}
-                  <td className="px-4 py-3 text-[12px] text-gray-500 whitespace-nowrap">{contact.firstContact}</td>
+                  <td className="px-4 py-3.5 text-[12px] text-gray-500 whitespace-nowrap">{contact.firstContact}</td>
 
                   {/* Status */}
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3.5">
                     <StatusBadge status={contact.status} />
                   </td>
 
                   {/* Handoff chain (PFSD) — clean, no comments */}
                   {viewAs === 'PFSD' && (
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5">
                       {contact.chain.length === 0 ? (
                         <span className="text-[12px] text-gray-300 italic">No chain set</span>
                       ) : (
@@ -1659,7 +1763,7 @@ function ContactsTable({
 
                   {/* PFSD note (dept view) */}
                   {viewAs !== 'PFSD' && (
-                    <td className="px-4 py-3 min-w-[220px] max-w-[280px]">
+                    <td className="px-4 py-3.5 min-w-[220px] max-w-[280px]">
                       {activeEntry?.comment ? (
                         <div className="relative group">
                           <p className={`flex items-start gap-1.5 text-[12px] text-gray-700 bg-blue-50 border border-blue-100 px-2.5 py-1.5 rounded-lg leading-relaxed ${activeEntry.comment.length > 80 ? 'pb-4' : ''}`}>
@@ -1687,7 +1791,7 @@ function ContactsTable({
 
                   {/* Pharmacy type */}
                   {viewAs === 'Pharmacy' && (
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3.5">
                       {pharmEntry?.pharmacyType ? (
                         <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${pharmEntry.pharmacyType === 'Question' ? 'bg-violet-100 text-violet-700' : 'bg-teal-100 text-teal-700'}`}>
                           {pharmEntry.pharmacyType}
@@ -1697,7 +1801,7 @@ function ContactsTable({
                   )}
 
                   {/* Priority */}
-                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                  <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
                     <div className="relative inline-block">
                       <select
                         value={contact.priority}
@@ -1712,11 +1816,11 @@ function ContactsTable({
                   </td>
 
                   {/* Last active */}
-                  <td className="px-4 py-3 text-[12px] text-gray-500 whitespace-nowrap">{contact.lastActive}</td>
+                  <td className="px-4 py-3.5 text-[12px] text-gray-500 whitespace-nowrap">{contact.lastActive}</td>
 
                   {/* Actions (dept view only) — driven by the current entry's own status */}
                   {viewAs !== 'PFSD' && (
-                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                    <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center gap-1.5">
                         {activeEntry?.entryStatus === 'pending' && (
                           <>
@@ -2014,7 +2118,7 @@ function ManualPage({
     <>
       <header className="flex items-center justify-between px-6 py-3.5 bg-white border-b border-gray-100 shrink-0">
         <div>
-          <h1 className="text-[15px] font-semibold text-gray-900">Manual</h1>
+          <h1 className="text-xl font-semibold text-gray-900">Manual</h1>
           <p className="text-[11px] text-gray-400">CRM System · Mon, 20 Jul 2026</p>
         </div>
         <div className="flex items-center gap-2.5">
@@ -2037,7 +2141,7 @@ function ManualPage({
         )}
 
         {/* Stat badges */}
-        <div className="flex gap-3 mb-5 overflow-x-auto pb-1">
+        <div className="flex flex-wrap gap-3 mb-5">
           <StatCard
             borderClass={HUE.violet.cardBorder}
             label="Total"
@@ -2076,134 +2180,119 @@ function ManualPage({
           />
         </div>
 
-        {/* Manual Inquiries filter card */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-            <p className="text-[11px] font-bold text-blue-600 uppercase tracking-wider">Manual Inquiries</p>
-          </div>
-          <p className="text-[13px] text-gray-400 mb-4">Manual inquiries registered by phone, in the same workflow as Telegram/Facebook.</p>
+        {/* Manual Inquiries card — filters and the data table share one card */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-5">
+          <div className="p-5">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+              <p className="text-[11px] font-bold text-blue-600 uppercase tracking-wider">Manual Inquiries</p>
+            </div>
+            <p className="text-[13px] text-gray-400 mb-4">Manual inquiries registered by phone, in the same workflow as Telegram/Facebook.</p>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
-            <div>
-              <label htmlFor="manual-filter-contact-name" className="text-[11px] font-semibold text-gray-500">Contact Name</label>
-              <div className="relative mt-1">
-                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
-                <input
-                  id="manual-filter-contact-name"
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  placeholder="Search Contact Name"
-                  className="w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-                />
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+              <div>
+                <label htmlFor="manual-filter-contact-name" className="text-[11px] font-semibold text-gray-500">Contact Name</label>
+                <div className="relative mt-1">
+                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
+                  <input
+                    id="manual-filter-contact-name"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder="Search Contact Name"
+                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="manual-filter-status" className="text-[11px] font-semibold text-gray-500">Status</label>
+                <div className="relative mt-1">
+                  <select
+                    id="manual-filter-status"
+                    value={statusFilter}
+                    onChange={e => setStatusFilter(e.target.value as 'All' | Status)}
+                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                  >
+                    <option value="All">All</option>
+                    <option value="Open">Open</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Closed">Closed</option>
+                  </select>
+                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="manual-filter-first-contact-date" className="text-[11px] font-semibold text-gray-500">First Contact Date</label>
+                <DateFilterInput id="manual-filter-first-contact-date" value={firstContactDateFilter} onChange={setFirstContactDateFilter} />
+              </div>
+
+              <div>
+                <label htmlFor="manual-filter-assignee" className="text-[11px] font-semibold text-gray-500">Assignee</label>
+                <div className="relative mt-1">
+                  <select
+                    id="manual-filter-assignee"
+                    value={assigneeFilter}
+                    onChange={e => setAssigneeFilter(e.target.value as 'All' | 'Unassigned' | Dept)}
+                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                  >
+                    <option value="All">All</option>
+                    <option value="Unassigned">Unassigned</option>
+                    {ALL_DEPTS.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="manual-filter-priority" className="text-[11px] font-semibold text-gray-500">Priority</label>
+                <div className="relative mt-1">
+                  <select
+                    id="manual-filter-priority"
+                    value={priorityFilter}
+                    onChange={e => setPriorityFilter(e.target.value as 'All' | Priority)}
+                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                  >
+                    <option value="All">All</option>
+                    <option value="Normal">Normal</option>
+                    <option value="Prio">Prio</option>
+                  </select>
+                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="manual-filter-last-active-date" className="text-[11px] font-semibold text-gray-500">Last Active Date</label>
+                <DateFilterInput id="manual-filter-last-active-date" value={lastActiveDateFilter} onChange={setLastActiveDateFilter} />
               </div>
             </div>
 
-            <div>
-              <label htmlFor="manual-filter-status" className="text-[11px] font-semibold text-gray-500">Status</label>
-              <div className="relative mt-1">
-                <select
-                  id="manual-filter-status"
-                  value={statusFilter}
-                  onChange={e => setStatusFilter(e.target.value as 'All' | Status)}
-                  className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
-                >
-                  <option value="All">All</option>
-                  <option value="Open">Open</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Closed">Closed</option>
-                </select>
-                <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="manual-filter-first-contact-date" className="text-[11px] font-semibold text-gray-500">First Contact Date</label>
-              <div className="relative mt-1">
-                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
-                <input
-                  id="manual-filter-first-contact-date"
-                  type="date"
-                  value={firstContactDateFilter}
-                  onChange={e => setFirstContactDateFilter(e.target.value)}
-                  className="w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="manual-filter-assignee" className="text-[11px] font-semibold text-gray-500">Assignee</label>
-              <div className="relative mt-1">
-                <select
-                  id="manual-filter-assignee"
-                  value={assigneeFilter}
-                  onChange={e => setAssigneeFilter(e.target.value as 'All' | 'Unassigned' | Dept)}
-                  className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
-                >
-                  <option value="All">All</option>
-                  <option value="Unassigned">Unassigned</option>
-                  {ALL_DEPTS.map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
-                <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="manual-filter-priority" className="text-[11px] font-semibold text-gray-500">Priority</label>
-              <div className="relative mt-1">
-                <select
-                  id="manual-filter-priority"
-                  value={priorityFilter}
-                  onChange={e => setPriorityFilter(e.target.value as 'All' | Priority)}
-                  className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
-                >
-                  <option value="All">All</option>
-                  <option value="Normal">Normal</option>
-                  <option value="Prio">Prio</option>
-                </select>
-                <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="manual-filter-last-active-date" className="text-[11px] font-semibold text-gray-500">Last Active Date</label>
-              <div className="relative mt-1">
-                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
-                <input
-                  id="manual-filter-last-active-date"
-                  type="date"
-                  value={lastActiveDateFilter}
-                  onChange={e => setLastActiveDateFilter(e.target.value)}
-                  className="w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-                />
-              </div>
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-orange-500 bg-orange-50 hover:bg-orange-100 transition-colors"
+              >
+                <RefreshIcon className="w-3.5 h-3.5" /> Clear
+              </button>
+              <span className="text-[11px] text-gray-400 whitespace-nowrap">{visible.length} results</span>
             </div>
           </div>
 
-          <button
-            onClick={clearFilters}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-orange-500 bg-orange-50 hover:bg-orange-100 transition-colors"
-          >
-            <RefreshIcon className="w-3.5 h-3.5" /> Clear
-          </button>
+          <ContactsTable
+            contacts={visible}
+            viewAs="PFSD"
+            paneContact={paneContact}
+            onRowClick={onRowClick}
+            updateContact={updateContact}
+            handleStart={handleStart}
+            handleWaitingPatient={handleWaitingPatient}
+            handleResume={handleResume}
+            handleMarkComplete={handleMarkComplete}
+            onReturn={onReturn}
+            bare
+            lastMessageColumnLabel="Last Note"
+          />
         </div>
-
-        <div className="flex items-center justify-end mb-3">
-          <span className="text-[11px] text-gray-400 whitespace-nowrap">{visible.length} results</span>
-        </div>
-
-        <ContactsTable
-          contacts={visible}
-          viewAs="PFSD"
-          paneContact={paneContact}
-          onRowClick={onRowClick}
-          updateContact={updateContact}
-          handleStart={handleStart}
-          handleWaitingPatient={handleWaitingPatient}
-          handleResume={handleResume}
-          handleMarkComplete={handleMarkComplete}
-          onReturn={onReturn}
-        />
       </div>
 
       {showForm && <ManualFormModal onClose={() => setShowForm(false)} onAdd={handleAdd} />}
@@ -2224,6 +2313,7 @@ function initialsFor(name: string, patientId: string): string {
 
 export default function App() {
   const [contacts, setContacts] = useState<Contact[]>(INIT)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   const [page, setPage] = useState<'Inbox' | 'Manual'>('Inbox')
   const [viewAs, setViewAs] = useState<ViewAs>('PFSD')
   const [paneContact, setPaneContact] = useState<Contact | null>(null)
@@ -2386,42 +2476,73 @@ export default function App() {
     <div className="flex h-screen bg-slate-50 overflow-hidden" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
 
       {/* ── Sidebar ──────────────────────────────────────────────────────── */}
-      <aside className="w-56 bg-[#111827] text-white flex flex-col shrink-0">
-        <div className="flex items-center gap-2.5 px-4 py-[18px] border-b border-white/10">
-          <div className="w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center text-[11px] font-black">C</div>
-          <span className="font-semibold text-[13px] tracking-tight">CRM System</span>
+      <aside className={`${sidebarOpen ? 'w-56' : 'w-16'} bg-[#111827] text-white flex flex-col shrink-0 transition-[width] duration-200 overflow-hidden`}>
+        <div className={`flex items-center border-b border-white/10 py-[18px] ${sidebarOpen ? 'justify-between px-4' : 'justify-center px-2'}`}>
+          {sidebarOpen && (
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center text-[11px] font-black shrink-0">C</div>
+              <span className="font-semibold text-[13px] tracking-tight truncate">CRM System</span>
+            </div>
+          )}
+          <button
+            onClick={() => setSidebarOpen(v => !v)}
+            title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+            className="text-white/50 hover:text-white transition-colors shrink-0"
+          >
+            <SidebarToggleIcon className="w-4 h-4" />
+          </button>
         </div>
-        <nav className="flex-1 px-2.5 py-4 overflow-y-auto space-y-0.5">
+        <nav className="flex-1 px-2.5 py-4 overflow-y-auto overflow-x-hidden space-y-0.5">
           {[
-            { label: 'Dashboard', icon: '⊞' },
-            { label: 'Inbox', icon: '✉', badge: 3 },
-            { label: 'Manual', icon: '✍' },
-            { label: 'Reservations', icon: '📅', badge: 3 },
-            { label: 'Medicines', icon: '💊' },
-            { label: 'Support', icon: '🛟', badge: 2 },
+            { label: 'Dashboard', icon: <DashboardGridIcon className="w-[18px] h-[18px]" /> },
+            { label: 'Inbox', icon: <MailIcon className="w-[18px] h-[18px]" />, badge: 3 },
+            { label: 'Manual', icon: <PencilIcon className="w-[18px] h-[18px]" /> },
+            { label: 'Reservations', icon: <CalendarIcon className="w-[18px] h-[18px]" />, badge: 3 },
+            { label: 'Medicines', icon: <PillIcon className="w-[18px] h-[18px]" /> },
+            { label: 'Support', icon: <LifeBuoyIcon className="w-[18px] h-[18px]" />, badge: 2 },
           ].map(item => {
             const isNavigable = item.label === 'Inbox' || item.label === 'Manual'
             const isActive = isNavigable && item.label === page
             return (
               <button
                 key={item.label}
+                title={!sidebarOpen ? item.label : undefined}
                 onClick={() => {
                   if (!isNavigable) return
                   setPage(item.label as 'Inbox' | 'Manual')
                   setPaneContact(null)
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-[13px] transition-colors ${isActive ? 'bg-blue-600 text-white' : 'text-white/60 hover:bg-white/8 hover:text-white'}`}
+                className={`w-full flex items-center py-2 rounded-lg text-[13px] transition-colors whitespace-nowrap ${sidebarOpen ? 'justify-between px-3' : 'justify-center px-0'} ${isActive ? 'bg-blue-600 text-white' : 'text-white/60 hover:bg-white/8 hover:text-white'}`}
               >
-                <span className="flex items-center gap-2.5">{item.icon} {item.label}</span>
-                {item.badge != null && <span className="bg-blue-500 text-white text-[10px] w-[18px] h-[18px] rounded-full flex items-center justify-center font-bold">{item.badge}</span>}
+                <span className={`flex items-center ${sidebarOpen ? 'gap-2.5' : ''}`}>
+                  <span className="shrink-0 flex items-center justify-center w-[18px] h-[18px]">{item.icon}</span>
+                  {sidebarOpen && item.label}
+                </span>
+                {sidebarOpen && item.badge != null && <span className="bg-blue-500 text-white text-[10px] w-[18px] h-[18px] rounded-full flex items-center justify-center font-bold shrink-0">{item.badge}</span>}
               </button>
             )
           })}
-          <div className="pt-5 pb-1.5 px-3">
-            <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Admin</span>
-          </div>
-          {['Members', 'User Mgmt', 'Scheduled Tasks', 'Pulse'].map(l => (
-            <button key={l} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-white/60 hover:bg-white/8 hover:text-white transition-colors">◈ {l}</button>
+          {sidebarOpen ? (
+            <div className="pt-5 pb-1.5 px-3">
+              <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Admin</span>
+            </div>
+          ) : (
+            <div className="my-3 mx-3 border-t border-white/10" />
+          )}
+          {[
+            { label: 'Members', icon: <UsersIcon className="w-[18px] h-[18px]" /> },
+            { label: 'User Mgmt', icon: <UserGearIcon className="w-[18px] h-[18px]" /> },
+            { label: 'Scheduled Tasks', icon: <ClockIcon className="w-[18px] h-[18px]" /> },
+            { label: 'Pulse', icon: <ActivityPulseIcon className="w-[18px] h-[18px]" /> },
+          ].map(item => (
+            <button
+              key={item.label}
+              title={!sidebarOpen ? item.label : undefined}
+              className={`w-full flex items-center py-2 rounded-lg text-[13px] text-white/60 hover:bg-white/8 hover:text-white transition-colors whitespace-nowrap ${sidebarOpen ? 'gap-2.5 px-3' : 'justify-center px-0'}`}
+            >
+              <span className="shrink-0 flex items-center justify-center w-[18px] h-[18px]">{item.icon}</span>
+              {sidebarOpen && item.label}
+            </button>
           ))}
         </nav>
       </aside>
@@ -2449,7 +2570,7 @@ export default function App() {
           {/* Top bar */}
           <header className="flex items-center justify-between px-6 py-3.5 bg-white border-b border-gray-100 shrink-0">
             <div>
-              <h1 className="text-[15px] font-semibold text-gray-900">Inbox</h1>
+              <h1 className="text-xl font-semibold text-gray-900">Inbox</h1>
               <p className="text-[11px] text-gray-400">CRM System · Mon, 20 Jul 2026</p>
             </div>
             <div className="flex items-center gap-2.5">
@@ -2486,7 +2607,7 @@ export default function App() {
 
           <div className="flex-1 overflow-y-auto p-6">
             {/* Stat badges */}
-            <div className="flex gap-3 mb-5 overflow-x-auto pb-1">
+            <div className="flex flex-wrap gap-3 mb-5">
               <StatCard
                 borderClass={HUE.violet.cardBorder}
                 label="Total"
@@ -2527,193 +2648,174 @@ export default function App() {
               />
             </div>
 
-            {/* Customer Inbox filter card */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                <p className="text-[11px] font-bold text-blue-600 uppercase tracking-wider">Customer Inbox</p>
-              </div>
-              <p className="text-[13px] text-gray-400 mb-4">Manage customer messages, assignments, and handoffs in one clean workspace.</p>
-
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 mb-4">
-                <div>
-                  <label htmlFor="filter-contact-name" className="text-[11px] font-semibold text-gray-500">Contact Name</label>
-                  <div className="relative mt-1">
-                    <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
-                    <input
-                      id="filter-contact-name"
-                      value={search}
-                      onChange={e => setSearch(e.target.value)}
-                      placeholder="Search Contact Name"
-                      className="w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-                    />
-                  </div>
+            {/* Customer Inbox card — filters and the data table share one card */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-5">
+              <div className="p-5">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                  <p className="text-[11px] font-bold text-blue-600 uppercase tracking-wider">Customer Inbox</p>
                 </div>
+                <p className="text-[13px] text-gray-400 mb-4">Manage customer messages, assignments, and handoffs in one clean workspace.</p>
 
-                <div>
-                  <label htmlFor="filter-status" className="text-[11px] font-semibold text-gray-500">Status</label>
-                  <div className="relative mt-1">
-                    <select
-                      id="filter-status"
-                      value={statusFilter}
-                      onChange={e => setStatusFilter(e.target.value as 'All' | Status)}
-                      className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
-                    >
-                      <option value="All">All</option>
-                      <option value="Open">Open</option>
-                      <option value="Pending">Pending</option>
-                      <option value="Closed">Closed</option>
-                    </select>
-                    <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 mb-4">
+                  <div>
+                    <label htmlFor="filter-contact-name" className="text-[11px] font-semibold text-gray-500">Contact Name</label>
+                    <div className="relative mt-1">
+                      <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
+                      <input
+                        id="filter-contact-name"
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        placeholder="Search Contact Name"
+                        className="w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div>
-                  <label htmlFor="filter-provider" className="text-[11px] font-semibold text-gray-500">Provider</label>
-                  <div className="relative mt-1">
-                    <select
-                      id="filter-provider"
-                      value={providerFilter}
-                      onChange={e => setProviderFilter(e.target.value as 'All' | 'Telegram' | 'Facebook')}
-                      className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
-                    >
-                      <option value="All">All</option>
-                      <option value="Telegram">Telegram</option>
-                      <option value="Facebook">Facebook</option>
-                    </select>
-                    <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="filter-first-contact-date" className="text-[11px] font-semibold text-gray-500">First Contact Date</label>
-                  <div className="relative mt-1">
-                    <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
-                    <input
-                      id="filter-first-contact-date"
-                      type="date"
-                      value={firstContactDateFilter}
-                      onChange={e => setFirstContactDateFilter(e.target.value)}
-                      className="w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="filter-assignee" className="text-[11px] font-semibold text-gray-500">Assignee</label>
-                  <div className="relative mt-1">
-                    <select
-                      id="filter-assignee"
-                      value={assigneeFilter}
-                      onChange={e => setAssigneeFilter(e.target.value as 'All' | 'Unassigned' | Dept)}
-                      className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
-                    >
-                      <option value="All">All</option>
-                      <option value="Unassigned">Unassigned</option>
-                      {ALL_DEPTS.map(d => <option key={d} value={d}>{d}</option>)}
-                    </select>
-                    <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="filter-priority" className="text-[11px] font-semibold text-gray-500">Priority</label>
-                  <div className="relative mt-1">
-                    <select
-                      id="filter-priority"
-                      value={priorityFilter}
-                      onChange={e => setPriorityFilter(e.target.value as 'All' | Priority)}
-                      className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
-                    >
-                      <option value="All">All</option>
-                      <option value="Normal">Normal</option>
-                      <option value="Prio">Prio</option>
-                    </select>
-                    <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="filter-last-active-date" className="text-[11px] font-semibold text-gray-500">Last Active Date</label>
-                  <div className="relative mt-1">
-                    <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
-                    <input
-                      id="filter-last-active-date"
-                      type="date"
-                      value={lastActiveDateFilter}
-                      onChange={e => setLastActiveDateFilter(e.target.value)}
-                      className="w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between flex-wrap gap-3">
-                <button
-                  onClick={clearFilters}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-orange-500 bg-orange-50 hover:bg-orange-100 transition-colors"
-                >
-                  <RefreshIcon className="w-3.5 h-3.5" /> Clear
-                </button>
-                {viewAs === 'Pharmacy' && (
-                  <div className="flex items-center gap-1">
-                    <span className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide mr-1">Type:</span>
-                    {(['All', 'Question', 'Medicine only'] as const).map(f => (
-                      <button
-                        key={f}
-                        onClick={() => setPharmFilter(f)}
-                        className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${pharmFilter === f ? 'bg-violet-600 text-white' : 'text-gray-500 hover:bg-violet-50 hover:text-violet-700'}`}
+                  <div>
+                    <label htmlFor="filter-status" className="text-[11px] font-semibold text-gray-500">Status</label>
+                    <div className="relative mt-1">
+                      <select
+                        id="filter-status"
+                        value={statusFilter}
+                        onChange={e => setStatusFilter(e.target.value as 'All' | Status)}
+                        className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
                       >
-                        {f}
-                      </button>
-                    ))}
+                        <option value="All">All</option>
+                        <option value="Open">Open</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Closed">Closed</option>
+                      </select>
+                      <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                    </div>
                   </div>
-                )}
+
+                  <div>
+                    <label htmlFor="filter-provider" className="text-[11px] font-semibold text-gray-500">Provider</label>
+                    <div className="relative mt-1">
+                      <select
+                        id="filter-provider"
+                        value={providerFilter}
+                        onChange={e => setProviderFilter(e.target.value as 'All' | 'Telegram' | 'Facebook')}
+                        className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                      >
+                        <option value="All">All</option>
+                        <option value="Telegram">Telegram</option>
+                        <option value="Facebook">Facebook</option>
+                      </select>
+                      <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="filter-first-contact-date" className="text-[11px] font-semibold text-gray-500">First Contact Date</label>
+                    <DateFilterInput id="filter-first-contact-date" value={firstContactDateFilter} onChange={setFirstContactDateFilter} />
+                  </div>
+
+                  <div>
+                    <label htmlFor="filter-assignee" className="text-[11px] font-semibold text-gray-500">Assignee</label>
+                    <div className="relative mt-1">
+                      <select
+                        id="filter-assignee"
+                        value={assigneeFilter}
+                        onChange={e => setAssigneeFilter(e.target.value as 'All' | 'Unassigned' | Dept)}
+                        className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                      >
+                        <option value="All">All</option>
+                        <option value="Unassigned">Unassigned</option>
+                        {ALL_DEPTS.map(d => <option key={d} value={d}>{d}</option>)}
+                      </select>
+                      <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="filter-priority" className="text-[11px] font-semibold text-gray-500">Priority</label>
+                    <div className="relative mt-1">
+                      <select
+                        id="filter-priority"
+                        value={priorityFilter}
+                        onChange={e => setPriorityFilter(e.target.value as 'All' | Priority)}
+                        className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                      >
+                        <option value="All">All</option>
+                        <option value="Normal">Normal</option>
+                        <option value="Prio">Prio</option>
+                      </select>
+                      <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="filter-last-active-date" className="text-[11px] font-semibold text-gray-500">Last Active Date</label>
+                    <DateFilterInput id="filter-last-active-date" value={lastActiveDateFilter} onChange={setLastActiveDateFilter} />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-orange-500 bg-orange-50 hover:bg-orange-100 transition-colors"
+                  >
+                    <RefreshIcon className="w-3.5 h-3.5" /> Clear
+                  </button>
+                  {viewAs === 'Pharmacy' && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide mr-1">Type:</span>
+                      {(['All', 'Question', 'Medicine only'] as const).map(f => (
+                        <button
+                          key={f}
+                          onClick={() => setPharmFilter(f)}
+                          className={`px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${pharmFilter === f ? 'bg-violet-600 text-white' : 'text-gray-500 hover:bg-violet-50 hover:text-violet-700'}`}
+                        >
+                          {f}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Tabs */}
+                <div className="flex items-center justify-between flex-wrap gap-3 mt-4">
+                  <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 w-fit">
+                    <button
+                      onClick={() => setActiveTab('needsReply')}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-[13px] font-semibold transition-colors ${
+                        activeTab === 'needsReply' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      Needs Reply
+                      <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">{counts.Open}</span>
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('all')}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-[13px] font-semibold transition-colors ${
+                        activeTab === 'all' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      All Contacts
+                      <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-gray-200 text-gray-600 text-[10px] font-bold flex items-center justify-center">{counts.Total}</span>
+                    </button>
+                  </div>
+                  <span className="text-[11px] text-gray-400 whitespace-nowrap">{visible.length} results</span>
+                </div>
               </div>
 
-              {/* Tabs */}
-              <div className="flex items-center gap-6 border-b border-gray-100 mt-4">
-                <button
-                  onClick={() => setActiveTab('needsReply')}
-                  className={`flex items-center gap-2 pb-2.5 text-[13px] font-semibold border-b-2 transition-colors ${
-                    activeTab === 'needsReply' ? 'text-gray-900 border-blue-500' : 'text-gray-400 border-transparent hover:text-gray-600'
-                  }`}
-                >
-                  Needs Reply
-                  <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">{counts.Open}</span>
-                  <HelpCircleIcon className="w-3.5 h-3.5 text-gray-300" />
-                </button>
-                <button
-                  onClick={() => setActiveTab('all')}
-                  className={`flex items-center gap-2 pb-2.5 text-[13px] font-semibold border-b-2 transition-colors ${
-                    activeTab === 'all' ? 'text-gray-900 border-blue-500' : 'text-gray-400 border-transparent hover:text-gray-600'
-                  }`}
-                >
-                  All Contacts
-                  <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-gray-200 text-gray-600 text-[10px] font-bold flex items-center justify-center">{counts.Total}</span>
-                  <HelpCircleIcon className="w-3.5 h-3.5 text-gray-300" />
-                </button>
-              </div>
+              <ContactsTable
+                contacts={visible}
+                viewAs={viewAs}
+                paneContact={paneContact}
+                onRowClick={c => setPaneContact(paneContact?.id === c.id ? null : c)}
+                updateContact={updateContact}
+                handleStart={handleStart}
+                handleWaitingPatient={handleWaitingPatient}
+                handleResume={handleResume}
+                handleMarkComplete={handleMarkComplete}
+                onReturn={c => setReturnContact(c)}
+                useIconActions
+                bare
+              />
             </div>
-
-            <div className="flex items-center justify-end mb-3">
-              <span className="text-[11px] text-gray-400 whitespace-nowrap">{visible.length} results</span>
-            </div>
-
-            {/* Table */}
-            <ContactsTable
-              contacts={visible}
-              viewAs={viewAs}
-              paneContact={paneContact}
-              onRowClick={c => setPaneContact(paneContact?.id === c.id ? null : c)}
-              updateContact={updateContact}
-              handleStart={handleStart}
-              handleWaitingPatient={handleWaitingPatient}
-              handleResume={handleResume}
-              handleMarkComplete={handleMarkComplete}
-              onReturn={c => setReturnContact(c)}
-              useIconActions
-            />
           </div>
         </>
         )}
