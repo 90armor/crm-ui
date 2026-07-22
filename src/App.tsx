@@ -7,7 +7,7 @@ type ViewAs = 'PFSD' | Dept
 type Status = 'Open' | 'Pending' | 'Closed'
 type Priority = 'Normal' | 'Prio'
 type PharmacyType = 'Question' | 'Medicine only'
-type ChainEntryStatus = 'waiting' | 'active' | 'waitingPatient' | 'completed' | 'returned'
+type ChainEntryStatus = 'queued' | 'pending' | 'active' | 'waitingPatient' | 'returned' | 'completed'
 
 interface ChainEntry {
   dept: Dept
@@ -66,7 +66,7 @@ const INIT: Contact[] = [
     firstContact: '01 Jul 2026', status: 'Pending', priority: 'Normal',
     chain: [
       { dept: 'Nurse (OPD)', comment: 'Check vitals and initial assessment', returnComment: '', entryStatus: 'active' },
-      { dept: 'Pharmacy', comment: 'Dispense prescribed medication after nurse review', returnComment: '', entryStatus: 'waiting', pharmacyType: 'Medicine only' },
+      { dept: 'Pharmacy', comment: 'Dispense prescribed medication after nurse review', returnComment: '', entryStatus: 'queued', pharmacyType: 'Medicine only' },
     ],
     currentChainIndex: 0, lastActive: 'Jul 15, 11:00 AM',
     activityLog: ['Assigned to Nurse (OPD) · 2h ago', 'Status set to Pending · 5h ago', 'Inquiry logged from Telegram · 5h ago'],
@@ -91,7 +91,7 @@ const INIT: Contact[] = [
     firstContact: '12 Jul 2026', status: 'Pending', priority: 'Prio',
     chain: [
       { dept: 'MA (IPD)', comment: 'Handle post-op care inquiry and coordinate with nurse', returnComment: '', entryStatus: 'active' },
-      { dept: 'Nurse (OPD)', comment: 'Follow up on post-op status and wound check', returnComment: '', entryStatus: 'waiting' },
+      { dept: 'Nurse (OPD)', comment: 'Follow up on post-op status and wound check', returnComment: '', entryStatus: 'queued' },
     ],
     currentChainIndex: 0, lastActive: 'Jul 12, 10:00 AM',
     activityLog: ['Assigned to MA (IPD) · 1h ago', 'Priority set to Prio · 2h ago', 'Inquiry logged from Manual · 8h ago'],
@@ -120,32 +120,69 @@ const ALL_VIEWS: ViewAs[] = ['PFSD', ...ALL_DEPTS]
 
 // ─── Style maps ───────────────────────────────────────────────────────────────
 
-const STATUS_STYLE: Record<Status, { pill: string }> = {
-  'Open':    { pill: 'bg-sky-100 text-sky-700' },
-  'Pending': { pill: 'bg-amber-100 text-amber-700' },
-  'Closed':  { pill: 'bg-emerald-100 text-emerald-700' },
+// Single source of truth for every status-adjacent color in the app. Each hue
+// spells out every literal Tailwind class it needs (Tailwind's JIT scanner
+// requires literal class names, so nothing here is built from a template
+// string). Every stat card, pill, badge, and dot below is derived from this
+// table via STATUS_HUE / ENTRY_HUE — change a hue here and every place that
+// status shows up updates together, instead of drifting the way the "Open"
+// pill once did (sky here, red on its KPI stat card).
+interface HueTokens {
+  pill: string       // bg-*-100 text-*-700 — flat badge/pill
+  border: string      // border-*-200 — pairs with `pill` for a bordered badge
+  dot: string           // bg-*-500 — small status dot
+  text: string           // text-*-700 — paired with `dot` in inline "Pending at X" copy
+  cardBorder: string       // border-l-*-500 — KPI stat card left accent
+  iconBg: string             // bg-*-50 — KPI stat card icon chip background
+  iconText: string            // text-*-500 — KPI stat card icon glyph color
+}
+type Hue = 'gray' | 'amber' | 'blue' | 'purple' | 'red' | 'emerald' | 'violet' | 'indigo'
+
+const HUE: Record<Hue, HueTokens> = {
+  gray:    { pill: 'bg-gray-100 text-gray-500',       border: 'border-gray-200',    dot: 'bg-gray-300',   text: 'text-gray-400',   cardBorder: 'border-l-gray-400',    iconBg: 'bg-gray-50',    iconText: 'text-gray-500' },
+  amber:   { pill: 'bg-amber-100 text-amber-700',     border: 'border-amber-200',   dot: 'bg-amber-500',  text: 'text-amber-700',  cardBorder: 'border-l-amber-500',   iconBg: 'bg-amber-50',   iconText: 'text-amber-500' },
+  blue:    { pill: 'bg-blue-100 text-blue-700',       border: 'border-blue-200',    dot: 'bg-blue-500',   text: 'text-blue-700',   cardBorder: 'border-l-blue-500',    iconBg: 'bg-blue-50',    iconText: 'text-blue-500' },
+  purple:  { pill: 'bg-purple-100 text-purple-700',   border: 'border-purple-200',  dot: 'bg-purple-500', text: 'text-purple-700', cardBorder: 'border-l-purple-500',  iconBg: 'bg-purple-50',  iconText: 'text-purple-500' },
+  red:     { pill: 'bg-red-100 text-red-700',         border: 'border-red-200',     dot: 'bg-red-500',    text: 'text-red-700',    cardBorder: 'border-l-red-500',     iconBg: 'bg-red-50',     iconText: 'text-red-500' },
+  emerald: { pill: 'bg-emerald-100 text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500', text: 'text-emerald-700', cardBorder: 'border-l-emerald-500', iconBg: 'bg-emerald-50', iconText: 'text-emerald-500' },
+  violet:  { pill: 'bg-violet-100 text-violet-700',   border: 'border-violet-200',  dot: 'bg-violet-500', text: 'text-violet-700', cardBorder: 'border-l-violet-500',  iconBg: 'bg-violet-50',  iconText: 'text-violet-500' },
+  indigo:  { pill: 'bg-indigo-100 text-indigo-700',   border: 'border-indigo-200',  dot: 'bg-indigo-500', text: 'text-indigo-700', cardBorder: 'border-l-indigo-500',  iconBg: 'bg-indigo-50',  iconText: 'text-indigo-500' },
 }
 
-const ENTRY_BADGE: Record<ChainEntryStatus, string> = {
-  waiting:        'bg-gray-100 text-gray-500 border-gray-200',
-  active:         'bg-blue-100 text-blue-700 border-blue-300',
-  waitingPatient: 'bg-purple-100 text-purple-700 border-purple-300',
-  completed:      'bg-emerald-100 text-emerald-700 border-emerald-200',
-  returned:       'bg-red-100 text-red-700 border-red-200',
+// Main case status (Contact.status) — the table's Status pill and the
+// Open/Pending/Closed KPI stat cards both read from this.
+const STATUS_HUE: Record<Status, Hue> = { Open: 'red', Pending: 'amber', Closed: 'emerald' }
+
+// Department-level (sub) status — the handoff chain's badges/dots/pills.
+// 'pending' intentionally reuses the same amber as the main "Pending" status:
+// both mean "action needed, nothing urgent yet". 'queued' and 'returned' each
+// intentionally share a hue with a main status too (gray↔nothing, red↔Open) —
+// see the note above STATUS_HUE. Open and Returned both being red is fine
+// because they never appear in the same row: a contact only reads "Open"
+// before any department has been assigned yet.
+const ENTRY_HUE: Record<ChainEntryStatus, Hue> = {
+  queued: 'gray', pending: 'amber', active: 'blue', waitingPatient: 'purple', returned: 'red', completed: 'emerald',
 }
+
+function mapEntryHue<T>(pick: (h: HueTokens) => T): Record<ChainEntryStatus, T> {
+  const out = {} as Record<ChainEntryStatus, T>
+  for (const status of Object.keys(ENTRY_HUE) as ChainEntryStatus[]) {
+    out[status] = pick(HUE[ENTRY_HUE[status]])
+  }
+  return out
+}
+
+const STATUS_STYLE: Record<Status, { pill: string }> = {
+  Open:    { pill: HUE[STATUS_HUE.Open].pill },
+  Pending: { pill: HUE[STATUS_HUE.Pending].pill },
+  Closed:  { pill: HUE[STATUS_HUE.Closed].pill },
+}
+
+const ENTRY_BADGE: Record<ChainEntryStatus, string> = mapEntryHue(h => `${h.pill} border ${h.border}`)
 
 // Dot + text tone for the Handoff Chain column — status reads from a small dot
-// and matching text color instead of a filled chip. "Up next" (current pointer,
-// still 'waiting') gets its own amber tone via CURRENT_WAITING_TONE so it reads
-// differently from a dept further down the chain that hasn't been reached yet.
-const ENTRY_TONE: Record<ChainEntryStatus, { dot: string; text: string }> = {
-  waiting:        { dot: 'bg-gray-300',    text: 'text-gray-400' },
-  active:         { dot: 'bg-blue-500',    text: 'text-blue-700' },
-  waitingPatient: { dot: 'bg-purple-500',  text: 'text-purple-700' },
-  completed:      { dot: 'bg-emerald-500', text: 'text-emerald-700' },
-  returned:       { dot: 'bg-red-500',     text: 'text-red-700' },
-}
-const CURRENT_WAITING_TONE = { dot: 'bg-amber-500', text: 'text-amber-700' }
+// and matching text color instead of a filled chip.
+const ENTRY_TONE: Record<ChainEntryStatus, { dot: string; text: string }> = mapEntryHue(h => ({ dot: h.dot, text: h.text }))
 
 // 'Nurse (OPD)' -> 'OPD', 'MA (IPD)' -> 'IPD'; depts without a parenthetical
 // abbreviation ('MC', 'Pharmacy') are already short and pass through as-is.
@@ -166,22 +203,18 @@ function matchesLooseDate(dateStr: string, isoDate: string): boolean {
 }
 
 // Used only for the "current" (isCurrent) badge/dot in DetailPane's breakdown —
-// 'completed' entries are never current, so that row is unused but keeps the
-// Record total so class strings stay literal for Tailwind's JIT scanner.
-const CURRENT_ENTRY_TONE: Record<ChainEntryStatus, { badge: string; dot: string }> = {
-  waiting:        { badge: 'bg-amber-100 text-amber-700',    dot: 'bg-amber-500' },
-  active:         { badge: 'bg-blue-100 text-blue-700',      dot: 'bg-blue-500' },
-  waitingPatient: { badge: 'bg-purple-100 text-purple-700',  dot: 'bg-purple-500' },
-  completed:      { badge: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-500' },
-  returned:       { badge: 'bg-red-100 text-red-700',        dot: 'bg-red-500' },
-}
+// 'queued' entries are never current (by definition they haven't been reached
+// yet), so that row is unused but keeps the Record total so class strings stay
+// literal for Tailwind's JIT scanner.
+const CURRENT_ENTRY_TONE: Record<ChainEntryStatus, { badge: string; dot: string }> = mapEntryHue(h => ({ badge: h.pill, dot: h.dot }))
 
 const ENTRY_STATUS_LABEL: Record<ChainEntryStatus, string> = {
-  waiting:        'Pending',
+  queued:         'Queued',
+  pending:        'Pending',
   active:         'In Progress',
-  waitingPatient: 'Waiting patient',
-  completed:      'Complete',
-  returned:       'Return',
+  waitingPatient: 'Waiting for Patient',
+  completed:      'Completed',
+  returned:       'Returned',
 }
 
 // ─── Shared components ────────────────────────────────────────────────────────
@@ -263,7 +296,7 @@ function StepDot({ status, isCurrent, isOrigin }: { status: ChainEntryStatus; is
       </span>
     )
   }
-  if (isCurrent) {
+  if (status === 'pending' || isCurrent) {
     return (
       <span className="relative z-10 w-5 h-5 flex items-center justify-center shrink-0">
         <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-60 animate-ping" />
@@ -271,6 +304,7 @@ function StepDot({ status, isCurrent, isOrigin }: { status: ChainEntryStatus; is
       </span>
     )
   }
+  // 'queued' — not yet reached, hollow marker
   return <span className="relative z-10 w-5 h-5 rounded-full bg-white border-2 border-gray-300 shrink-0" />
 }
 
@@ -492,9 +526,12 @@ function RefreshIcon({ className }: { className?: string }) {
   )
 }
 
-function IconChip({ tone, children }: { tone: 'violet' | 'red' | 'orange' | 'emerald'; children: React.ReactNode }) {
-  const bg = { violet: 'bg-violet-50', red: 'bg-red-50', orange: 'bg-orange-50', emerald: 'bg-emerald-50' }[tone]
-  return <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${bg}`}>{children}</div>
+function IconChip({ tone, Icon }: { tone: Hue; Icon: React.ComponentType<{ className?: string }> }) {
+  return (
+    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${HUE[tone].iconBg}`}>
+      <Icon className={`w-[18px] h-[18px] ${HUE[tone].iconText}`} />
+    </div>
+  )
 }
 
 function StatCard({
@@ -656,6 +693,15 @@ function AssignPopup({
     setFocusTargetIndex(null)
   }, [focusTargetIndex])
 
+  // Opening the popup via "Reassign" (from the Return Details card) is always
+  // about that one returned dept — jump straight into its note instead of
+  // making PFSD find and click into the right entry themselves.
+  useEffect(() => {
+    if (mode === 'reassign' && contact.currentChainIndex >= 0) {
+      setFocusTargetIndex(contact.currentChainIndex)
+    }
+  }, [])
+
   // For a still-waiting dept, the note (and Pharmacy inquiry type) start collapsed
   // behind a pencil — PFSD sees the note as a label and opts into editing it, and
   // opening it (either via the pencil or fresh from "Add to chain") grabs focus,
@@ -684,14 +730,16 @@ function AssignPopup({
       return next
     })
 
-  // An entry is editable while PFSD hasn't handed it off yet — status 'waiting',
-  // whether that's the up-next entry or one further down the chain — so its
-  // note, position, and presence in the chain can still change. Reassign also
-  // unlocks the returned entry itself (currentChainIndex), so PFSD can redirect
-  // it the same way they'd build the chain in the first place. Anything being
-  // actively worked (active/waitingPatient) or already completed stays locked.
+  // An entry is editable while PFSD hasn't handed it off yet — status 'queued'
+  // (further down the chain, not yet reached) or 'pending' (up next, Start not
+  // clicked) — so its note, position, and presence in the chain can still change.
+  // Reassign also unlocks the returned entry itself (currentChainIndex), so PFSD
+  // can redirect it the same way they'd build the chain in the first place.
+  // Anything being actively worked (active/waitingPatient) or already completed
+  // stays locked.
   const isEntryEditable = (entry: ChainEntry, i: number) =>
-    entry.entryStatus === 'waiting' || (mode === 'reassign' && i === contact.currentChainIndex && entry.entryStatus === 'returned')
+    entry.entryStatus === 'queued' || entry.entryStatus === 'pending' ||
+    (mode === 'reassign' && i === contact.currentChainIndex && entry.entryStatus === 'returned')
 
   const updateComment = (i: number, v: string) =>
     setChain(p => p.map((e, j) => j === i ? { ...e, comment: v } : e))
@@ -701,7 +749,7 @@ function AssignPopup({
 
   const addDept = (dept: Dept) => {
     const newIndex = chain.length
-    setChain(p => [...p, { dept, comment: '', returnComment: '', entryStatus: 'waiting' }])
+    setChain(p => [...p, { dept, comment: '', returnComment: '', entryStatus: 'queued' }])
     setEditingComments(prev => new Set(prev).add(newIndex))
     setFocusTargetIndex(newIndex)
   }
@@ -739,11 +787,13 @@ function AssignPopup({
   }
 
   const handleSave = () => {
+    const newIdx = contact.currentChainIndex === -1 && chain.length > 0 ? 0 : contact.currentChainIndex
+    // Editable entries resolve to 'pending' at the current position (it's that
+    // dept's turn now) and 'queued' everywhere else (not reached yet).
     const updatedChain = chain.map((e, i) => {
       if (!isEntryEditable(e, i)) return e
-      return { ...e, entryStatus: 'waiting' as ChainEntryStatus }
+      return { ...e, entryStatus: (i === newIdx ? 'pending' : 'queued') as ChainEntryStatus }
     })
-    const newIdx = contact.currentChainIndex === -1 && updatedChain.length > 0 ? 0 : contact.currentChainIndex
     onSave(updatedChain, newIdx)
     onClose()
   }
@@ -776,12 +826,12 @@ function AssignPopup({
           {chain.map((entry, i) => {
             const isLocked = !isEntryEditable(entry, i)
             const isDraggable = !isLocked
-            // A dept that's still waiting starts with its note collapsed to a label;
-            // any other editable entry (e.g. the returned dept during reassign) keeps
-            // the note open, since it's already mid-flow rather than freshly queued.
-            const isWaitingEditable = !isLocked && entry.entryStatus === 'waiting'
+            // A dept that's still queued or pending starts with its note collapsed to a
+            // label; any other editable entry (e.g. the returned dept during reassign)
+            // keeps the note open, since it's already mid-flow rather than freshly queued.
+            const isFreshEditable = !isLocked && (entry.entryStatus === 'queued' || entry.entryStatus === 'pending')
             const isEditingNote = editingComments.has(i)
-            const showNoteEditor = !isLocked && (!isWaitingEditable || isEditingNote)
+            const showNoteEditor = !isLocked && (!isFreshEditable || isEditingNote)
             return (
               <div
                 key={i}
@@ -814,12 +864,12 @@ function AssignPopup({
                   }
                 </div>
 
-                {/* PFSD note — a waiting dept shows it as a label with a pencil to edit;
-                    any other editable entry keeps the textarea open directly. */}
+                {/* PFSD note — a queued/pending dept shows it as a label with a pencil to
+                    edit; any other editable entry keeps the textarea open directly. */}
                 <div>
                   <div className="flex items-center justify-between gap-2">
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">PFSD note to {entry.dept} <span className="normal-case font-medium text-gray-300">(optional)</span></label>
-                    {isWaitingEditable && (
+                    {isFreshEditable && (
                       <button
                         onClick={() => toggleEditComment(i)}
                         title={isEditingNote ? 'Done editing' : 'Edit note'}
@@ -982,6 +1032,38 @@ function ReturnModal({
   )
 }
 
+// ─── Confirm Modal (generic yes/no, no comment box) ───────────────────────────
+
+function ConfirmModal({
+  title, message, confirmLabel, tone = 'red', onClose, onConfirm,
+}: {
+  title: string; message: string; confirmLabel: string; tone?: 'red' | 'gray'; onClose: () => void; onConfirm: () => void
+}) {
+  const confirmClass = tone === 'red' ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-900 hover:bg-gray-700'
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[400px]">
+        <div className="flex items-start justify-between p-6 border-b border-gray-100">
+          <h2 className="text-[15px] font-semibold text-gray-900">{title}</h2>
+          <button onClick={onClose} className="text-gray-300 hover:text-gray-600 text-2xl leading-none">×</button>
+        </div>
+        <div className="p-6">
+          <p className="text-[13px] text-gray-600 leading-relaxed">{message}</p>
+        </div>
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100">
+          <button onClick={onClose} className="px-4 py-2 text-[13px] text-gray-500 hover:text-gray-800">Cancel</button>
+          <button
+            onClick={onConfirm}
+            className={`px-5 py-2 text-[13px] font-semibold text-white rounded-xl transition-colors ${confirmClass}`}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Right Pane (PFSD view) ───────────────────────────────────────────────────
 
 function DetailPane({
@@ -990,33 +1072,30 @@ function DetailPane({
   onUpdate,
   onOpenAssign,
   onOpenReassign,
+  onMarkComplete,
 }: {
   contact: Contact
   onClose: () => void
   onUpdate: (c: Contact) => void
   onOpenAssign: () => void
   onOpenReassign: () => void
+  onMarkComplete: (c: Contact) => void
 }) {
   const returnedEntry = contact.chain.find(e => e.entryStatus === 'returned')
 
-  const handleMarkResolved = () => {
-    // Re-activate the returned dept — continue the task
-    const newChain = contact.chain.map(e =>
-      e.entryStatus === 'returned' ? { ...e, entryStatus: 'active' as ChainEntryStatus, returnComment: e.returnComment } : e
-    )
-    onUpdate({ ...contact, status: 'Pending', chain: newChain, activityLog: [`PFSD resolved return from ${returnedEntry?.dept} · just now`, ...contact.activityLog] })
-  }
-
+  const [confirmCloseOpen, setConfirmCloseOpen] = useState(false)
   const handleClose = () => {
     onUpdate({ ...contact, status: 'Closed', chain: [], currentChainIndex: -1, activityLog: ['Case closed by PFSD · just now', ...contact.activityLog] })
+    setConfirmCloseOpen(false)
     onClose()
   }
 
-  const removeDeptFromChain = (i: number) => {
-    const dept = contact.chain[i].dept
-    if (!window.confirm(`Remove ${dept} from the assignment chain?`)) return
-    const newChain = contact.chain.filter((_, j) => j !== i)
+  const [removeIndex, setRemoveIndex] = useState<number | null>(null)
+  const confirmRemoveDept = () => {
+    if (removeIndex === null) return
+    const newChain = contact.chain.filter((_, j) => j !== removeIndex)
     onUpdate({ ...contact, chain: newChain })
+    setRemoveIndex(null)
   }
 
   // Comment sections start collapsed; keying by contact id + chain index means
@@ -1059,6 +1138,7 @@ function DetailPane({
   ]
 
   return (
+    <>
     <div className="w-[310px] shrink-0 bg-white border-l-[3px] border-blue-500 flex flex-col h-full shadow-lg overflow-hidden">
       {/* Pane header */}
       <div className="flex items-start justify-between px-4 py-4 border-b border-gray-100">
@@ -1086,8 +1166,8 @@ function DetailPane({
             <p className="text-[12px] text-gray-600 leading-relaxed">{returnedEntry.returnComment}</p>
             <div className="flex items-center gap-2 mt-1">
               <button
-                onClick={handleMarkResolved}
-                className="flex-1 py-1.5 rounded-lg bg-red-600 text-white text-[12px] font-semibold hover:bg-red-700 transition-colors"
+                onClick={() => onMarkComplete(contact)}
+                className="flex-1 py-1.5 rounded-lg bg-emerald-600 text-white text-[12px] font-semibold hover:bg-emerald-700 transition-colors"
               >
                 Mark complete
               </button>
@@ -1109,10 +1189,10 @@ function DetailPane({
               const isLast = idx === steps.length - 1
               const isOrigin = step.key === 'pfsd'
               // "Current" is whichever step is holding the baton right now — the dept
-              // at currentChainIndex (even before it clicks Start, i.e. still 'waiting'),
+              // at currentChainIndex (even before it clicks Start, i.e. still 'pending'),
               // or PFSD's own step when nothing is assigned/everything has wrapped up.
               const isCurrent = isOrigin ? step.status === 'active' : step.chainIndex === contact.currentChainIndex
-              const removable = step.chainIndex !== undefined && step.status === 'waiting'
+              const removable = step.chainIndex !== undefined && (step.status === 'queued' || step.status === 'pending')
               const labelClass = stepLabelClass(step.status, isCurrent)
               const comment = step.chainIndex !== undefined ? contact.chain[step.chainIndex].comment : ''
               const commentKey = `${contact.id}-${step.chainIndex}`
@@ -1123,15 +1203,12 @@ function DetailPane({
               const statusLabel = isOrigin
                 ? (contact.chain.length === 0 ? 'Needs assignment' : 'Ready to close')
                 : ENTRY_STATUS_LABEL[step.status]
-              // The Return Details card above already states dept + reason in full for
-              // the returned entry — the row keeps its red pulsing dot but skips the
-              // redundant "Return" text pill.
-              const showCurrentBadge = isCurrent && step.status !== 'returned'
+              const showCurrentBadge = isCurrent
               // Origin's badge/dot use indigo (not the shared blue "in progress" tone)
               // so its "active" reads as "waiting on admin", distinct from a department
               // actively working the case.
               const badgeTone = isOrigin && step.status === 'active'
-                ? { badge: 'bg-indigo-100 text-indigo-700', dot: 'bg-indigo-500' }
+                ? { badge: HUE.indigo.pill, dot: HUE.indigo.dot }
                 : CURRENT_ENTRY_TONE[step.status]
               return (
                 <div key={step.key} className="relative flex gap-3">
@@ -1155,16 +1232,16 @@ function DetailPane({
                       </span>
                       <div className="flex items-center gap-2 shrink-0">
                         {/* Status, right-aligned in the row — current gets a live pulsing badge,
-                            an unreached department is explicitly called "Not started". */}
+                            an unreached department is explicitly called "Queued". */}
                         {showCurrentBadge && (
                           <span className={`inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 ${badgeTone.badge}`}>
                             <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${badgeTone.dot}`} />
                             {statusLabel}
                           </span>
                         )}
-                        {!isCurrent && step.status === 'waiting' && (
+                        {step.status === 'queued' && (
                           <span className="inline-flex items-center text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 bg-gray-100 text-gray-400">
-                            Not started
+                            Queued
                           </span>
                         )}
                         {/* Comment toggle sits after the status */}
@@ -1182,7 +1259,7 @@ function DetailPane({
                             Origin is never removable, so it's skipped instead of shown disabled. */}
                         {!isOrigin && (
                         <button
-                          onClick={() => removable && removeDeptFromChain(step.chainIndex!)}
+                          onClick={() => removable && setRemoveIndex(step.chainIndex!)}
                           disabled={!removable}
                           title={removable ? `Remove ${step.label}` : `${step.label} can't be removed`}
                           className={`flex items-center justify-center shrink-0 transition-colors ${
@@ -1252,7 +1329,7 @@ function DetailPane({
           Assign to dept.
         </button>
         <button
-          onClick={handleClose}
+          onClick={() => setConfirmCloseOpen(true)}
           disabled={contact.status === 'Closed'}
           className="flex-1 py-2 rounded-xl bg-gray-900 text-white text-[12px] font-semibold hover:bg-gray-700 transition-colors disabled:opacity-40 text-center"
         >
@@ -1260,6 +1337,29 @@ function DetailPane({
         </button>
       </div>
     </div>
+
+    {confirmCloseOpen && (
+      <ConfirmModal
+        title="Close case"
+        message={`Close this case for ${contact.name}? This clears the assignment chain and marks the case as Closed.`}
+        confirmLabel="Close case"
+        tone="gray"
+        onClose={() => setConfirmCloseOpen(false)}
+        onConfirm={handleClose}
+      />
+    )}
+
+    {removeIndex !== null && (
+      <ConfirmModal
+        title="Remove department"
+        message={`Remove ${contact.chain[removeIndex].dept} from the assignment chain?`}
+        confirmLabel="Remove"
+        tone="red"
+        onClose={() => setRemoveIndex(null)}
+        onConfirm={confirmRemoveDept}
+      />
+    )}
+    </>
   )
 }
 
@@ -1423,8 +1523,7 @@ function ContactsTable({
           <tbody>
             {contacts.map((contact, ri) => {
               const activeEntry = contact.chain[contact.currentChainIndex]
-              // Same tone rule as the Handoff Chain dots, so the two stay in sync.
-              const activeTone = activeEntry && (activeEntry.entryStatus === 'waiting' ? CURRENT_WAITING_TONE : ENTRY_TONE[activeEntry.entryStatus])
+              const activeTone = activeEntry && ENTRY_TONE[activeEntry.entryStatus]
               const pharmEntry = contact.chain.find(e => e.dept === 'Pharmacy')
               const isSelected = paneContact?.id === contact.id
 
@@ -1519,12 +1618,10 @@ function ContactsTable({
                         <>
                           <div className="flex items-center gap-1.5 flex-wrap">
                             {contact.chain.map((entry, idx) => {
-                              // Up-next dept (current pointer, hasn't clicked Start yet) gets its
-                              // own amber tone so it's visibly distinct from a not-yet-reached dept
-                              // further down the chain — both are 'waiting' under the hood. Only the
+                              // 'pending' (up next, hasn't clicked Start yet) already carries its
+                              // own amber tone, distinct from 'queued' (not yet reached). Only the
                               // dot encodes status; the pill and text stay neutral throughout.
-                              const isCurrentWaiting = idx === contact.currentChainIndex && entry.entryStatus === 'waiting'
-                              const tone = isCurrentWaiting ? CURRENT_WAITING_TONE : ENTRY_TONE[entry.entryStatus]
+                              const tone = ENTRY_TONE[entry.entryStatus]
                               return (
                                 <span key={idx} className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[11px] font-semibold">
                                   <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${tone.dot}`} />
@@ -1603,7 +1700,7 @@ function ContactsTable({
                   {viewAs !== 'PFSD' && (
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center gap-1.5">
-                        {activeEntry?.entryStatus === 'waiting' && (
+                        {activeEntry?.entryStatus === 'pending' && (
                           <>
                             <button
                               onClick={() => handleStart(contact)}
@@ -1924,40 +2021,40 @@ function ManualPage({
         {/* Stat badges */}
         <div className="flex gap-3 mb-5 overflow-x-auto pb-1">
           <StatCard
-            borderClass="border-l-violet-500"
+            borderClass={HUE.violet.cardBorder}
             label="Total"
             count={counts.Total}
-            icon={<IconChip tone="violet"><UsersIcon className="w-[18px] h-[18px] text-violet-500" /></IconChip>}
+            icon={<IconChip tone="violet" Icon={UsersIcon} />}
           />
           <StatCard
-            borderClass="border-l-violet-500"
+            borderClass={HUE.violet.cardBorder}
             label="New Contacts"
             count={counts.NewContacts}
-            icon={<IconChip tone="violet"><UserPlusIcon className="w-[18px] h-[18px] text-violet-500" /></IconChip>}
+            icon={<IconChip tone="violet" Icon={UserPlusIcon} />}
           />
           <StatCard
-            borderClass="border-l-red-500"
+            borderClass={HUE.red.cardBorder}
             label="Unassigned"
             count={counts.Unassigned}
-            icon={<IconChip tone="red"><UserXIcon className="w-[18px] h-[18px] text-red-500" /></IconChip>}
+            icon={<IconChip tone="red" Icon={UserXIcon} />}
           />
           <StatCard
-            borderClass="border-l-red-500"
+            borderClass={HUE.red.cardBorder}
             label="Open"
             count={counts.Open}
-            icon={<IconChip tone="red"><ClockIcon className="w-[18px] h-[18px] text-red-500" /></IconChip>}
+            icon={<IconChip tone="red" Icon={ClockIcon} />}
           />
           <StatCard
-            borderClass="border-l-orange-500"
+            borderClass={HUE.amber.cardBorder}
             label="Pending"
             count={counts.Pending}
-            icon={<IconChip tone="orange"><HourglassIcon className="w-[18px] h-[18px] text-orange-500" /></IconChip>}
+            icon={<IconChip tone="amber" Icon={HourglassIcon} />}
           />
           <StatCard
-            borderClass="border-l-emerald-500"
+            borderClass={HUE.emerald.cardBorder}
             label="Closed"
             count={counts.Closed}
-            icon={<IconChip tone="emerald"><CheckCircleIcon className="w-[18px] h-[18px] text-emerald-500" /></IconChip>}
+            icon={<IconChip tone="emerald" Icon={CheckCircleIcon} />}
           />
         </div>
 
@@ -2159,10 +2256,14 @@ export default function App() {
 
   const handleMarkComplete = (contact: Contact) => {
     const next = contact.currentChainIndex + 1
-    const newChain = contact.chain.map((e, i) =>
-      i === contact.currentChainIndex ? { ...e, entryStatus: 'completed' as ChainEntryStatus } : e
-    )
     const noMore = next >= contact.chain.length
+    // Completing the current dept hands the baton to the next queued dept, which
+    // becomes pending (their turn now, Start not yet clicked).
+    const newChain = contact.chain.map((e, i) => {
+      if (i === contact.currentChainIndex) return { ...e, entryStatus: 'completed' as ChainEntryStatus }
+      if (!noMore && i === next) return { ...e, entryStatus: 'pending' as ChainEntryStatus }
+      return e
+    })
     const log = `${contact.chain[contact.currentChainIndex]?.dept} marked complete · just now`
     updateContact({
       ...contact,
@@ -2360,42 +2461,42 @@ export default function App() {
             {/* Stat badges */}
             <div className="flex gap-3 mb-5 overflow-x-auto pb-1">
               <StatCard
-                borderClass="border-l-violet-500"
+                borderClass={HUE.violet.cardBorder}
                 label="Total"
                 count={counts.Total}
-                icon={<IconChip tone="violet"><UsersIcon className="w-[18px] h-[18px] text-violet-500" /></IconChip>}
+                icon={<IconChip tone="violet" Icon={UsersIcon} />}
               />
-              <StatCard borderClass="border-l-blue-500" label="Telegram" count={counts.Telegram} icon={<TelegramGlyph className="w-9 h-9" />} />
-              <StatCard borderClass="border-l-blue-500" label="Facebook" count={counts.Facebook} icon={<FacebookGlyph className="w-9 h-9" />} />
+              <StatCard borderClass={HUE.blue.cardBorder} label="Telegram" count={counts.Telegram} icon={<TelegramGlyph className="w-9 h-9" />} />
+              <StatCard borderClass={HUE.blue.cardBorder} label="Facebook" count={counts.Facebook} icon={<FacebookGlyph className="w-9 h-9" />} />
               <StatCard
-                borderClass="border-l-violet-500"
+                borderClass={HUE.violet.cardBorder}
                 label="New Contacts"
                 count={counts.NewContacts}
-                icon={<IconChip tone="violet"><UserPlusIcon className="w-[18px] h-[18px] text-violet-500" /></IconChip>}
+                icon={<IconChip tone="violet" Icon={UserPlusIcon} />}
               />
               <StatCard
-                borderClass="border-l-red-500"
+                borderClass={HUE.red.cardBorder}
                 label="Unassigned"
                 count={counts.Unassigned}
-                icon={<IconChip tone="red"><UserXIcon className="w-[18px] h-[18px] text-red-500" /></IconChip>}
+                icon={<IconChip tone="red" Icon={UserXIcon} />}
               />
               <StatCard
-                borderClass="border-l-red-500"
+                borderClass={HUE.red.cardBorder}
                 label="Open"
                 count={counts.Open}
-                icon={<IconChip tone="red"><ClockIcon className="w-[18px] h-[18px] text-red-500" /></IconChip>}
+                icon={<IconChip tone="red" Icon={ClockIcon} />}
               />
               <StatCard
-                borderClass="border-l-orange-500"
+                borderClass={HUE.amber.cardBorder}
                 label="Pending"
                 count={counts.Pending}
-                icon={<IconChip tone="orange"><HourglassIcon className="w-[18px] h-[18px] text-orange-500" /></IconChip>}
+                icon={<IconChip tone="amber" Icon={HourglassIcon} />}
               />
               <StatCard
-                borderClass="border-l-emerald-500"
+                borderClass={HUE.emerald.cardBorder}
                 label="Closed"
                 count={counts.Closed}
-                icon={<IconChip tone="emerald"><CheckCircleIcon className="w-[18px] h-[18px] text-emerald-500" /></IconChip>}
+                icon={<IconChip tone="emerald" Icon={CheckCircleIcon} />}
               />
             </div>
 
@@ -2587,6 +2688,7 @@ export default function App() {
             onUpdate={updateContact}
             onOpenAssign={() => { setAssignContact(paneContact); setAssignMode('assign') }}
             onOpenReassign={() => { setAssignContact(paneContact); setAssignMode('reassign') }}
+            onMarkComplete={handleMarkComplete}
           />
         )}
       </div>
