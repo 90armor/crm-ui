@@ -798,7 +798,12 @@ function AssignPopup({
   }
 
   const handleSave = () => {
-    const newIdx = contact.currentChainIndex === -1 && chain.length > 0 ? 0 : contact.currentChainIndex
+    // No baton held (-1) can mean a fresh chain, or every prior dept already
+    // completed with new depts freshly added after them — either way, the
+    // current position is the first entry PFSD hasn't finished, not index 0.
+    const newIdx = contact.currentChainIndex === -1
+      ? chain.findIndex(e => e.entryStatus !== 'completed')
+      : contact.currentChainIndex
     // Editable entries resolve to 'pending' at the current position (it's that
     // dept's turn now) and 'queued' everywhere else (not reached yet).
     const updatedChain = chain.map((e, i) => {
@@ -1104,8 +1109,21 @@ function DetailPane({
   const [removeIndex, setRemoveIndex] = useState<number | null>(null)
   const confirmRemoveDept = () => {
     if (removeIndex === null) return
+    const wasCurrent = removeIndex === contact.currentChainIndex
     const newChain = contact.chain.filter((_, j) => j !== removeIndex)
-    onUpdate({ ...contact, chain: newChain })
+    // Removing the current dept hands the baton to whichever dept now sits at
+    // that index — same "next becomes pending" handoff as handleMarkComplete.
+    const noMore = wasCurrent && removeIndex >= newChain.length
+    if (wasCurrent && !noMore) newChain[removeIndex] = { ...newChain[removeIndex], entryStatus: 'pending' }
+    const newCurrentChainIndex = wasCurrent
+      ? (noMore ? -1 : removeIndex)
+      : (removeIndex < contact.currentChainIndex ? contact.currentChainIndex - 1 : contact.currentChainIndex)
+    onUpdate({
+      ...contact,
+      chain: newChain,
+      currentChainIndex: newCurrentChainIndex,
+      status: noMore ? 'Pending' : contact.status,
+    })
     setRemoveIndex(null)
   }
 
@@ -1250,7 +1268,7 @@ function DetailPane({
                             {statusLabel}
                           </span>
                         )}
-                        {step.status === 'queued' && (
+                        {step.status === 'queued' && !showCurrentBadge && (
                           <span className="inline-flex items-center text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 bg-gray-100 text-gray-400">
                             Queued
                           </span>
