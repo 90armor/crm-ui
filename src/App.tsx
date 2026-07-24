@@ -1984,7 +1984,7 @@ function ManualFormModal({
   const [phone, setPhone] = useState('')
   const [comment, setComment] = useState('')
 
-  const isValid = comment.trim() !== ''
+  const isValid = patientId.trim() !== '' && phone.trim() !== '' && comment.trim() !== ''
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -2008,13 +2008,13 @@ function ManualFormModal({
         <form id="manual-inquiry-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
           <div>
             <label htmlFor="manual-patient-id" className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-              Patient ID
+              Patient ID <span className="text-red-500">*</span>
             </label>
             <input
               id="manual-patient-id"
               value={patientId}
               onChange={e => setPatientId(e.target.value)}
-              placeholder="e.g. HN00123 (optional)"
+              placeholder="e.g. HN00123"
               autoFocus
               className="mt-1.5 w-full text-[13px] border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-gray-300"
             />
@@ -2033,13 +2033,13 @@ function ManualFormModal({
 
           <div>
             <label htmlFor="manual-phone" className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-              Phone Number
+              Phone Number <span className="text-red-500">*</span>
             </label>
             <input
               id="manual-phone"
               value={phone}
               onChange={e => setPhone(e.target.value)}
-              placeholder="e.g. 0812345678 (optional)"
+              placeholder="e.g. 0812345678"
               className="mt-1.5 w-full text-[13px] border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-gray-300"
             />
           </div>
