@@ -332,6 +332,16 @@ function MinusCircleIcon({ className }: { className?: string }) {
   )
 }
 
+function NoteIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M5 3.5h7.5L16 7v9a1 1 0 01-1 1H5a1 1 0 01-1-1v-11.5a1 1 0 011-1z" />
+      <path d="M12.5 3.5V7H16" />
+      <path d="M6.5 10.5h7M6.5 13h5" />
+    </svg>
+  )
+}
+
 function PencilIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -958,6 +968,10 @@ function AssignPopup({
                   entry.entryStatus === 'waitingPatient' ? 'border-purple-300 bg-purple-50/40' :
                   entry.entryStatus === 'completed'      ? 'border-gray-200 bg-gray-50/60 opacity-70' :
                   entry.entryStatus === 'returned'       ? 'border-red-200 bg-red-50/40' :
+                  // Pending (next up, Start not yet clicked) gets the same amber accent
+                  // as its badge/dot elsewhere — it deserves the same visual weight as
+                  // active/waiting/returned. Queued (not yet reached) stays neutral.
+                  entry.entryStatus === 'pending'        ? 'border-amber-300 bg-amber-50/40' :
                   'border-gray-200 bg-white'
                 } ${isDraggable ? 'cursor-grab active:cursor-grabbing' : ''}`}
               >
@@ -1225,16 +1239,9 @@ function DetailPane({
     setRemoveIndex(null)
   }
 
-  // Comment sections start collapsed; keying by contact id + chain index means
-  // switching to a different contact naturally shows everything collapsed again.
-  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set())
-  const toggleComment = (key: string) =>
-    setExpandedComments(prev => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return next
-    })
+  // At most one note popover open at a time; keying by contact id + chain index
+  // means switching to a different contact naturally closes it again.
+  const [openNoteKey, setOpenNoteKey] = useState<string | null>(null)
 
   // Activity log starts collapsed to a standard preview count; keyed by contact id
   // so switching contacts naturally re-collapses it.
@@ -1323,7 +1330,7 @@ function DetailPane({
               const labelClass = stepLabelClass(step.status, isCurrent)
               const comment = step.chainIndex !== undefined ? contact.chain[step.chainIndex].comment : ''
               const commentKey = `${contact.id}-${step.chainIndex}`
-              const isCommentOpen = !!comment && expandedComments.has(commentKey)
+              const isCommentOpen = !!comment && openNoteKey === commentKey
               // PFSD isn't a department, so "In Progress" reads oddly for its two very
               // different "active" moments — reword just for that row; dept rows keep
               // the shared ENTRY_STATUS_LABEL vocabulary.
@@ -1344,7 +1351,7 @@ function DetailPane({
                   )}
                   <StepDot status={step.status} isCurrent={isCurrent} isOrigin={isOrigin} />
                   <div className={`flex-1 min-w-0 ${isLast ? 'pb-0.5' : 'pb-5'}`}>
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="relative flex items-center justify-between gap-2">
                       <span className="flex items-center gap-1.5 min-w-0">
                         <span className={`text-[12.5px] truncate ${labelClass}`}>
                           {step.label}
@@ -1356,7 +1363,37 @@ function DetailPane({
                             Admin
                           </span>
                         )}
+                        {/* PFSD's note lives right on the dept it's about, as a small
+                            popover — a comment can run long, so it floats over the
+                            layout instead of pushing every row below it down. Anchored
+                            to the row (not the icon) so it can't run past the pane's
+                            edge regardless of how long the department label is. */}
+                        {comment && (
+                          <button
+                            onClick={() => setOpenNoteKey(k => k === commentKey ? null : commentKey)}
+                            title={isCommentOpen ? 'Hide PFSD note' : 'View PFSD note'}
+                            className={`flex items-center justify-center w-5 h-5 rounded-md shrink-0 transition-colors ${
+                              isCommentOpen ? 'text-blue-600 bg-blue-50' : 'text-gray-300 hover:text-blue-500 hover:bg-blue-50'
+                            }`}
+                          >
+                            <NoteIcon className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </span>
+                      {isCommentOpen && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setOpenNoteKey(null)} />
+                          <div className="absolute left-0 top-full mt-1.5 z-50 w-56 max-w-full bg-white border border-gray-100 rounded-2xl shadow-2xl p-3">
+                            <div className="flex items-center gap-1.5 mb-1.5">
+                              <NoteIcon className="w-3 h-3 text-gray-400" />
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">PFSD Note</p>
+                            </div>
+                            <p className="text-[12px] text-gray-600 leading-relaxed whitespace-pre-wrap break-words max-h-40 overflow-y-auto">
+                              {comment}
+                            </p>
+                          </div>
+                        </>
+                      )}
                       <div className="flex items-center gap-2 shrink-0">
                         {/* Status, right-aligned in the row — current gets a live pulsing badge,
                             an unreached department is explicitly called "Queued". */}
@@ -1370,16 +1407,6 @@ function DetailPane({
                           <span className="inline-flex items-center text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 bg-gray-100 text-gray-400">
                             Queued
                           </span>
-                        )}
-                        {/* Comment toggle sits after the status */}
-                        {comment && (
-                          <button
-                            onClick={() => toggleComment(commentKey)}
-                            className="flex items-center justify-center w-5 h-5 rounded text-blue-400 hover:text-blue-700 hover:bg-blue-50 shrink-0 transition-colors text-[11px] leading-none"
-                            title={isCommentOpen ? 'Hide PFSD note' : 'Show PFSD note'}
-                          >
-                            {isCommentOpen ? '▲' : '▼'}
-                          </button>
                         )}
                         {/* Remove is shown for a uniform status rail on dept rows — enabled (red) only
                             for a department PFSD hasn't reached yet, disabled (faint gray) otherwise.
@@ -1408,11 +1435,6 @@ function DetailPane({
                         Not shown once closed: an empty chain there means "already handled," not "not yet." */}
                     {step.key === 'pfsd' && contact.chain.length === 0 && contact.status !== 'Closed' && (
                       <p className="mt-0.5 text-[11px] text-gray-400">Not yet assigned to a department</p>
-                    )}
-                    {isCommentOpen && (
-                      <p className="mt-1.5 text-[11.5px] text-gray-600 bg-gray-50 border border-gray-100 rounded-lg px-2.5 py-1.5 leading-relaxed">
-                        {comment}
-                      </p>
                     )}
                   </div>
                 </div>
