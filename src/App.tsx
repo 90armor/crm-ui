@@ -217,6 +217,409 @@ const ENTRY_STATUS_LABEL: Record<ChainEntryStatus, string> = {
   returned:       'Returned',
 }
 
+// ─── Reservations (separate module — appointment requests, not the Inbox chain) ──
+
+type ReservationStatus = 'Open' | 'Pending' | 'Resolved'
+type VisitorType = 'First Visit' | 'Follow-up'
+type AppointmentType = 'New Appointment' | 'Follow-up Visit' | 'Consultation' | 'Procedure'
+
+interface Reservation {
+  id: string
+  // Reuses the Contact shape so the row can reuse Avatar/SourceIcon/MessageBoxModal
+  // as-is — a reservation's patient is still a "contact" for messaging purposes.
+  contact: Contact
+  createdDate: string
+  hospital: string
+  visitorType: VisitorType
+  status: ReservationStatus
+  assignee: string | null
+  appointmentType: AppointmentType
+  scheduleDate: string
+  scheduleTime: string
+  doctor: string
+  // Row-click detail pane fields — the contact's name is often a handle/username
+  // (source-specific), not the patient's legal name, so these are kept separate.
+  fullName: string
+  dateOfBirth: string
+  address: string
+  nationalId: string
+  purpose: string
+  healthPackage: string
+}
+
+const HOSPITALS = ['Sunrise Hospital - Main', 'Sunrise Hospital - OPD', 'Sunrise Hospital - IPD']
+// Shared admin/clinical staff pool — also used as the Assignee options for
+// the Documents module below.
+const STAFF_MEMBERS = ['Dr. Somchai P.', 'Dr. Ariya K.', 'Nurse Malee S.', 'Nurse Ben T.']
+
+const RESERVATION_STATUS_HUE: Record<ReservationStatus, Hue> = { Open: 'red', Pending: 'amber', Resolved: 'emerald' }
+
+const RESERVATIONS: Reservation[] = [
+  {
+    id: 'res-1',
+    contact: {
+      id: 'res-contact-1', name: '90Armor', initials: '9', color: '#3b82f6',
+      source: 'Telegram', phone: '0812345678', lastMessage: 'I would like to book a new appointment.',
+      firstContact: '24 Jul 2026', status: 'Open', priority: 'Normal',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 24, 10:00 AM', activityLog: ['Reservation logged via Telegram · 2h ago', 'Awaiting assignment · 1h ago'],
+    },
+    createdDate: '24 Jul 2026', hospital: 'Sunrise Hospital - Main', visitorType: 'First Visit',
+    status: 'Pending', assignee: null, appointmentType: 'New Appointment',
+    scheduleDate: '30 Jul 2026', scheduleTime: '09:00', doctor: '-',
+    fullName: 'Greg', dateOfBirth: '01 January 2005', address: 'Newton', nationalId: 'YH45321',
+    purpose: 'Health Check-up', healthPackage: 'Basic Health Check-Up Package',
+  },
+  {
+    id: 'res-2',
+    contact: {
+      id: 'res-contact-2', name: 'Suparat K.', initials: 'SK', color: '#10b981',
+      source: 'Facebook', phone: '0891234567', lastMessage: 'Can I move my follow-up to next week?',
+      firstContact: '20 Jul 2026', status: 'Open', priority: 'Normal',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 22, 2:15 PM', activityLog: ['Reservation logged via Facebook · 2h ago', 'Assigned to Nurse Malee S. · 1h ago'],
+    },
+    createdDate: '20 Jul 2026', hospital: 'Sunrise Hospital - OPD', visitorType: 'Follow-up',
+    status: 'Open', assignee: 'Nurse Malee S.', appointmentType: 'Follow-up Visit',
+    scheduleDate: '02 Aug 2026', scheduleTime: '13:30', doctor: 'Dr. Ariya K.',
+    fullName: 'Suparat Kongkiat', dateOfBirth: '14 March 1990', address: 'Bangkok', nationalId: 'TH88213',
+    purpose: 'Follow-up check', healthPackage: 'Chronic Care Follow-up Package',
+  },
+  {
+    id: 'res-3',
+    contact: {
+      id: 'res-contact-3', name: 'Kittipong R.', initials: 'KR', color: '#8b5cf6',
+      source: 'Manual', hnNumber: 'HN00456', phone: '0898765432', lastMessage: 'Requested a consultation about knee pain.',
+      firstContact: '18 Jul 2026', status: 'Closed', priority: 'Normal',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 25, 9:40 AM', activityLog: ['Reservation logged via Manual · 2h ago', 'Assigned to Dr. Somchai P. · 1h ago'],
+    },
+    createdDate: '18 Jul 2026', hospital: 'Sunrise Hospital - Main', visitorType: 'First Visit',
+    status: 'Resolved', assignee: 'Dr. Somchai P.', appointmentType: 'Consultation',
+    scheduleDate: '25 Jul 2026', scheduleTime: '10:00', doctor: 'Dr. Somchai P.',
+    fullName: 'Kittipong Rattana', dateOfBirth: '22 September 1985', address: 'Chiang Mai', nationalId: 'TH45019',
+    purpose: 'Knee pain consultation', healthPackage: 'Orthopedic Consultation Package',
+  },
+  {
+    id: 'res-4',
+    contact: {
+      id: 'res-contact-4', name: 'Nan Waraporn', initials: 'NW', color: '#f97316',
+      source: 'Telegram', phone: '0865551234', lastMessage: 'Need to reschedule my procedure.',
+      firstContact: '21 Jul 2026', status: 'Pending', priority: 'Prio',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 23, 4:00 PM', activityLog: ['Reservation logged via Telegram · 2h ago', 'Awaiting assignment · 1h ago'],
+    },
+    createdDate: '21 Jul 2026', hospital: 'Sunrise Hospital - IPD', visitorType: 'Follow-up',
+    status: 'Pending', assignee: null, appointmentType: 'Procedure',
+    scheduleDate: '03 Aug 2026', scheduleTime: '08:30', doctor: '-',
+    fullName: 'Nan Waraporn', dateOfBirth: '05 June 1993', address: 'Khon Kaen', nationalId: 'TH61027',
+    purpose: 'Minor procedure reschedule', healthPackage: 'Day Procedure Package',
+  },
+  {
+    id: 'res-5',
+    contact: {
+      id: 'res-contact-5', name: 'Chaiyot S.', initials: 'CS', color: '#06b6d4',
+      source: 'Facebook', phone: '0877654321', lastMessage: 'First time visiting, want to book a check-up.',
+      firstContact: '19 Jul 2026', status: 'Open', priority: 'Normal',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 19, 11:20 AM', activityLog: ['Reservation logged via Facebook · 2h ago', 'Assigned to Nurse Ben T. · 1h ago'],
+    },
+    createdDate: '19 Jul 2026', hospital: 'Sunrise Hospital - OPD', visitorType: 'First Visit',
+    status: 'Open', assignee: 'Nurse Ben T.', appointmentType: 'New Appointment',
+    scheduleDate: '29 Jul 2026', scheduleTime: '15:00', doctor: '-',
+    fullName: 'Chaiyot Somboon', dateOfBirth: '30 November 1998', address: 'Phuket', nationalId: 'TH70945',
+    purpose: 'General check-up', healthPackage: 'Basic Health Check-Up Package',
+  },
+  {
+    id: 'res-6',
+    contact: {
+      id: 'res-contact-6', name: 'Pim Aroonrat', initials: 'PA', color: '#ec4899',
+      source: 'Manual', hnNumber: 'HN00789', phone: '0876543210', lastMessage: 'Confirming my follow-up appointment.',
+      firstContact: '15 Jul 2026', status: 'Closed', priority: 'Normal',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 22, 1:00 PM', activityLog: ['Reservation logged via Manual · 2h ago', 'Assigned to Dr. Ariya K. · 1h ago'],
+    },
+    createdDate: '15 Jul 2026', hospital: 'Sunrise Hospital - Main', visitorType: 'Follow-up',
+    status: 'Resolved', assignee: 'Dr. Ariya K.', appointmentType: 'Consultation',
+    scheduleDate: '22 Jul 2026', scheduleTime: '11:00', doctor: 'Dr. Ariya K.',
+    fullName: 'Pim Aroonrat', dateOfBirth: '19 April 1988', address: 'Nonthaburi', nationalId: 'TH33087',
+    purpose: 'Post-visit follow-up', healthPackage: 'Chronic Care Follow-up Package',
+  },
+]
+
+// ─── Documents (separate module — patient document requests) ────────────────
+
+type DocumentType = 'Japan National Insurance' | 'Medical Certificate' | 'Insurance Claim' | 'Referral Letter' | 'Lab Report'
+type ReceiveMethod = 'Pickup' | 'Mail' | 'Email' | 'Courier'
+
+interface DocumentRequest {
+  id: string
+  // Same reuse rationale as Reservation.contact — lets the row reuse
+  // Avatar/SourceIcon/MessageBoxModal unchanged.
+  contact: Contact
+  createdDate: string
+  // Request status shares the exact Open/Pending/Resolved vocabulary (and
+  // color tone) as Reservations, so it reuses that type and hue map rather
+  // than duplicating both.
+  status: ReservationStatus
+  assignee: string | null
+  documentType: DocumentType
+  patientName: string
+  patientId: string
+  receiveMethod: ReceiveMethod
+  receiveDate: string
+}
+
+const DOCUMENT_TYPES: DocumentType[] = ['Japan National Insurance', 'Medical Certificate', 'Insurance Claim', 'Referral Letter', 'Lab Report']
+const RECEIVE_METHODS: ReceiveMethod[] = ['Pickup', 'Mail', 'Email', 'Courier']
+
+const DOCUMENT_REQUESTS: DocumentRequest[] = [
+  {
+    id: 'doc-1',
+    contact: {
+      id: 'doc-contact-1', name: '90Armor', initials: '9', color: '#3b82f6',
+      source: 'Telegram', lastMessage: 'I need a copy of my insurance document.',
+      firstContact: '28 Jul 2026', status: 'Open', priority: 'Normal',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 28, 9:15 AM', activityLog: ['Document request logged via Telegram · 2h ago', 'Awaiting assignment · 1h ago'],
+    },
+    createdDate: '28 Jul 2026', status: 'Open', assignee: null,
+    documentType: 'Japan National Insurance', patientName: 'HouseGreg', patientId: 'P3-88227',
+    receiveMethod: 'Pickup', receiveDate: '29 Jul 2026',
+  },
+  {
+    id: 'doc-2',
+    contact: {
+      id: 'doc-contact-2', name: 'Suparat K.', initials: 'SK', color: '#10b981',
+      source: 'Facebook', lastMessage: 'Can you send my medical certificate by email?',
+      firstContact: '24 Jul 2026', status: 'Open', priority: 'Normal',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 25, 2:30 PM', activityLog: ['Document request logged via Facebook · 2h ago', 'Assigned to Nurse Malee S. · 1h ago'],
+    },
+    createdDate: '24 Jul 2026', status: 'Pending', assignee: 'Nurse Malee S.',
+    documentType: 'Medical Certificate', patientName: 'Suparat Kongkiat', patientId: 'P3-88231',
+    receiveMethod: 'Email', receiveDate: '26 Jul 2026',
+  },
+  {
+    id: 'doc-3',
+    contact: {
+      id: 'doc-contact-3', name: 'Kittipong R.', initials: 'KR', color: '#8b5cf6',
+      source: 'Manual', hnNumber: 'HN00456', phone: '0898765432', lastMessage: 'Requested a referral letter for a specialist.',
+      firstContact: '19 Jul 2026', status: 'Closed', priority: 'Normal',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 23, 10:00 AM', activityLog: ['Document request logged via Manual · 2h ago', 'Assigned to Dr. Somchai P. · 1h ago'],
+    },
+    createdDate: '19 Jul 2026', status: 'Resolved', assignee: 'Dr. Somchai P.',
+    documentType: 'Referral Letter', patientName: 'Kittipong Rattana', patientId: 'P3-88198',
+    receiveMethod: 'Mail', receiveDate: '23 Jul 2026',
+  },
+  {
+    id: 'doc-4',
+    contact: {
+      id: 'doc-contact-4', name: 'Nan Waraporn', initials: 'NW', color: '#f97316',
+      source: 'Telegram', lastMessage: 'Need my lab results for insurance filing.',
+      firstContact: '22 Jul 2026', status: 'Pending', priority: 'Prio',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 24, 4:45 PM', activityLog: ['Document request logged via Telegram · 2h ago', 'Awaiting assignment · 1h ago'],
+    },
+    createdDate: '22 Jul 2026', status: 'Pending', assignee: null,
+    documentType: 'Lab Report', patientName: 'Nan Waraporn', patientId: 'P3-88245',
+    receiveMethod: 'Courier', receiveDate: '27 Jul 2026',
+  },
+  {
+    id: 'doc-5',
+    contact: {
+      id: 'doc-contact-5', name: 'Chaiyot S.', initials: 'CS', color: '#06b6d4',
+      source: 'Facebook', lastMessage: 'Filing an insurance claim, need the paperwork.',
+      firstContact: '20 Jul 2026', status: 'Open', priority: 'Normal',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 20, 1:10 PM', activityLog: ['Document request logged via Facebook · 2h ago', 'Assigned to Nurse Ben T. · 1h ago'],
+    },
+    createdDate: '20 Jul 2026', status: 'Open', assignee: 'Nurse Ben T.',
+    documentType: 'Insurance Claim', patientName: 'Chaiyot Somboon', patientId: 'P3-88209',
+    receiveMethod: 'Pickup', receiveDate: '25 Jul 2026',
+  },
+  {
+    id: 'doc-6',
+    contact: {
+      id: 'doc-contact-6', name: 'Pim Aroonrat', initials: 'PA', color: '#ec4899',
+      source: 'Manual', hnNumber: 'HN00789', phone: '0876543210', lastMessage: 'Picked up my medical certificate already, confirming.',
+      firstContact: '16 Jul 2026', status: 'Closed', priority: 'Normal',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 18, 9:00 AM', activityLog: ['Document request logged via Manual · 2h ago', 'Assigned to Dr. Ariya K. · 1h ago'],
+    },
+    createdDate: '16 Jul 2026', status: 'Resolved', assignee: 'Dr. Ariya K.',
+    documentType: 'Medical Certificate', patientName: 'Pim Aroonrat', patientId: 'P3-88176',
+    receiveMethod: 'Pickup', receiveDate: '18 Jul 2026',
+  },
+]
+
+// ─── Medicine (separate module — pharmacy medicine requests) ────────────────
+
+type MedicinePurpose = 'Request Only' | 'Refill' | 'New Prescription' | 'Delivery Request'
+
+interface MedicineRequest {
+  id: string
+  // Same reuse rationale as Reservation.contact / DocumentRequest.contact.
+  contact: Contact
+  patientId: string
+  createdDate: string
+  // Shares the Open/Pending/Resolved vocabulary and color tone with
+  // Reservations/Documents — reuses that type and hue map rather than a
+  // third copy of both.
+  status: ReservationStatus
+  assignee: string | null
+  purpose: MedicinePurpose
+  items: number
+}
+
+const MEDICINE_PURPOSES: MedicinePurpose[] = ['Request Only', 'Refill', 'New Prescription', 'Delivery Request']
+
+const MEDICINE_REQUESTS: MedicineRequest[] = [
+  {
+    id: 'med-1',
+    contact: {
+      id: 'med-contact-1', name: 'Poky', initials: 'P', color: '#3b82f6',
+      source: 'Telegram', lastMessage: 'Can I request my usual medicine only, no consultation needed?',
+      firstContact: '28 Jul 2026', status: 'Open', priority: 'Normal',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 28, 8:50 AM', activityLog: ['Medicine request logged via Telegram · 2h ago', 'Awaiting assignment · 1h ago'],
+    },
+    patientId: 'P12345', createdDate: '28 Jul 2026', status: 'Open', assignee: null,
+    purpose: 'Request Only', items: 1,
+  },
+  {
+    id: 'med-2',
+    contact: {
+      id: 'med-contact-2', name: 'Suparat K.', initials: 'SK', color: '#10b981',
+      source: 'Facebook', lastMessage: 'Need a refill for my blood pressure medication.',
+      firstContact: '24 Jul 2026', status: 'Open', priority: 'Normal',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 25, 3:00 PM', activityLog: ['Medicine request logged via Facebook · 2h ago', 'Assigned to Nurse Malee S. · 1h ago'],
+    },
+    patientId: 'P12389', createdDate: '24 Jul 2026', status: 'Pending', assignee: 'Nurse Malee S.',
+    purpose: 'Refill', items: 2,
+  },
+  {
+    id: 'med-3',
+    contact: {
+      id: 'med-contact-3', name: 'Kittipong R.', initials: 'KR', color: '#8b5cf6',
+      source: 'Manual', hnNumber: 'HN00456', phone: '0898765432', lastMessage: 'Doctor prescribed new medication, need it dispensed.',
+      firstContact: '19 Jul 2026', status: 'Closed', priority: 'Normal',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 22, 11:20 AM', activityLog: ['Medicine request logged via Manual · 2h ago', 'Assigned to Dr. Somchai P. · 1h ago'],
+    },
+    patientId: 'P12312', createdDate: '19 Jul 2026', status: 'Resolved', assignee: 'Dr. Somchai P.',
+    purpose: 'New Prescription', items: 3,
+  },
+  {
+    id: 'med-4',
+    contact: {
+      id: 'med-contact-4', name: 'Nan Waraporn', initials: 'NW', color: '#f97316',
+      source: 'Telegram', lastMessage: 'Can my medicine be delivered instead of picking up?',
+      firstContact: '22 Jul 2026', status: 'Pending', priority: 'Prio',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 24, 1:15 PM', activityLog: ['Medicine request logged via Telegram · 2h ago', 'Awaiting assignment · 1h ago'],
+    },
+    patientId: 'P12401', createdDate: '22 Jul 2026', status: 'Pending', assignee: null,
+    purpose: 'Delivery Request', items: 4,
+  },
+  {
+    id: 'med-5',
+    contact: {
+      id: 'med-contact-5', name: 'Chaiyot S.', initials: 'CS', color: '#06b6d4',
+      source: 'Facebook', lastMessage: 'Requesting my regular vitamins, no appointment.',
+      firstContact: '20 Jul 2026', status: 'Open', priority: 'Normal',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 20, 9:30 AM', activityLog: ['Medicine request logged via Facebook · 2h ago', 'Assigned to Nurse Ben T. · 1h ago'],
+    },
+    patientId: 'P12377', createdDate: '20 Jul 2026', status: 'Open', assignee: 'Nurse Ben T.',
+    purpose: 'Request Only', items: 1,
+  },
+  {
+    id: 'med-6',
+    contact: {
+      id: 'med-contact-6', name: 'Pim Aroonrat', initials: 'PA', color: '#ec4899',
+      source: 'Manual', hnNumber: 'HN00789', phone: '0876543210', lastMessage: 'Confirming refill was picked up already.',
+      firstContact: '16 Jul 2026', status: 'Closed', priority: 'Normal',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 18, 10:40 AM', activityLog: ['Medicine request logged via Manual · 2h ago', 'Assigned to Dr. Ariya K. · 1h ago'],
+    },
+    patientId: 'P12298', createdDate: '16 Jul 2026', status: 'Resolved', assignee: 'Dr. Ariya K.',
+    purpose: 'Refill', items: 2,
+  },
+]
+
+// ─── Support (separate module — general help/callback requests) ─────────────
+
+interface SupportRequest {
+  id: string
+  // Same reuse rationale as Reservation.contact / DocumentRequest.contact.
+  contact: Contact
+  patientId: string
+  createdDate: string
+  // Shares the Open/Pending/Resolved vocabulary and color tone with the
+  // other request modules — reuses that type and hue map.
+  status: ReservationStatus
+  assignee: string | null
+  // Free text, not a fixed category (unlike Medicine's purpose) — support
+  // requests cover open-ended reasons, so there's no Purpose filter either.
+  purpose: string
+  comments: string
+  callbackNo: string
+}
+
+const SUPPORT_REQUESTS: SupportRequest[] = [
+  {
+    id: 'sup-1',
+    contact: {
+      id: 'sup-contact-1', name: 'Poky', initials: 'P', color: '#3b82f6',
+      source: 'Telegram', lastMessage: 'ASDFF',
+      firstContact: '28 Jul 2026', status: 'Open', priority: 'Normal',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 28, 8:10 AM', activityLog: ['Support request logged via Telegram · 2h ago', 'Awaiting assignment · 1h ago'],
+    },
+    patientId: 'P1234', createdDate: '28 Jul 2026', status: 'Open', assignee: null,
+    purpose: 'ASDFF', comments: '-', callbackNo: '023456781',
+  },
+  {
+    id: 'sup-2',
+    contact: {
+      id: 'sup-contact-2', name: 'Suparat K.', initials: 'SK', color: '#10b981',
+      source: 'Facebook', lastMessage: 'I was charged twice for my last visit, please help.',
+      firstContact: '24 Jul 2026', status: 'Open', priority: 'Normal',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 25, 11:00 AM', activityLog: ['Support request logged via Facebook · 2h ago', 'Assigned to Nurse Malee S. · 1h ago'],
+    },
+    patientId: 'P1267', createdDate: '24 Jul 2026', status: 'Pending', assignee: 'Nurse Malee S.',
+    purpose: 'Billing inquiry', comments: 'Waiting on finance to confirm the duplicate charge.', callbackNo: '0891234567',
+  },
+  {
+    id: 'sup-3',
+    contact: {
+      id: 'sup-contact-3', name: 'Kittipong R.', initials: 'KR', color: '#8b5cf6',
+      source: 'Manual', hnNumber: 'HN00456', phone: '0898765432', lastMessage: 'Can\'t log in to the patient portal.',
+      firstContact: '19 Jul 2026', status: 'Closed', priority: 'Normal',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 21, 9:30 AM', activityLog: ['Support request logged via Manual · 2h ago', 'Assigned to Dr. Somchai P. · 1h ago'],
+    },
+    patientId: 'P1198', createdDate: '19 Jul 2026', status: 'Resolved', assignee: 'Dr. Somchai P.',
+    purpose: 'Portal login issue', comments: 'Password reset sent, confirmed working.', callbackNo: '0898765432',
+  },
+  {
+    id: 'sup-4',
+    contact: {
+      id: 'sup-contact-4', name: 'Nan Waraporn', initials: 'NW', color: '#f97316',
+      source: 'Telegram', lastMessage: 'Wanted to give feedback about the waiting time.',
+      firstContact: '22 Jul 2026', status: 'Pending', priority: 'Normal',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 23, 3:20 PM', activityLog: ['Support request logged via Telegram · 2h ago', 'Awaiting assignment · 1h ago'],
+    },
+    patientId: 'P1245', createdDate: '22 Jul 2026', status: 'Pending', assignee: null,
+    purpose: 'General feedback', comments: '-', callbackNo: '0865551234',
+  },
+  {
+    id: 'sup-5',
+    contact: {
+      id: 'sup-contact-5', name: 'Chaiyot S.', initials: 'CS', color: '#06b6d4',
+      source: 'Facebook', lastMessage: 'Need help understanding my last invoice.',
+      firstContact: '20 Jul 2026', status: 'Open', priority: 'Normal',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 20, 10:05 AM', activityLog: ['Support request logged via Facebook · 2h ago', 'Assigned to Nurse Ben T. · 1h ago'],
+    },
+    patientId: 'P1209', createdDate: '20 Jul 2026', status: 'Open', assignee: 'Nurse Ben T.',
+    purpose: 'Billing inquiry', comments: 'Called once, no answer — retry tomorrow.', callbackNo: '0877654321',
+  },
+  {
+    id: 'sup-6',
+    contact: {
+      id: 'sup-contact-6', name: 'Pim Aroonrat', initials: 'PA', color: '#ec4899',
+      source: 'Manual', hnNumber: 'HN00789', phone: '0876543210', lastMessage: 'Thanks, my issue got sorted out already.',
+      firstContact: '16 Jul 2026', status: 'Closed', priority: 'Normal',
+      chain: [], currentChainIndex: -1, lastActive: 'Jul 17, 4:00 PM', activityLog: ['Support request logged via Manual · 2h ago', 'Assigned to Dr. Ariya K. · 1h ago'],
+    },
+    patientId: 'P1176', createdDate: '16 Jul 2026', status: 'Resolved', assignee: 'Dr. Ariya K.',
+    purpose: 'Technical support', comments: 'Reinstalled the app, resolved.', callbackNo: '0876543210',
+  },
+]
+
 // ─── Shared components ────────────────────────────────────────────────────────
 
 function Avatar({ initials, color, size = 36 }: { initials: string; color: string; size?: number }) {
@@ -460,6 +863,45 @@ function SendIcon({ className }: { className?: string }) {
 
 // ─── Inbox stat-card + filter icons ──────────────────────────────────────────
 
+function UserIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="10" cy="7" r="3" />
+      <path d="M3.5 17c.6-3.4 3.1-5.5 6.5-5.5s5.9 2.1 6.5 5.5" />
+    </svg>
+  )
+}
+
+function BuildingIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <rect x="4" y="2.5" width="9" height="15" rx="1" />
+      <path d="M13 8.5h3v9h-12" />
+      <path d="M6.5 5.5h1.5M6.5 8.5h1.5M6.5 11.5h1.5M9.5 5.5h1.5M9.5 8.5h1.5M9.5 11.5h1.5" />
+    </svg>
+  )
+}
+
+function MapPinIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M10 17.5s6-5.3 6-10a6 6 0 10-12 0c0 4.7 6 10 6 10z" />
+      <circle cx="10" cy="7.5" r="2" />
+    </svg>
+  )
+}
+
+function IdCardIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <rect x="2.5" y="4.5" width="15" height="11" rx="1.5" />
+      <circle cx="7" cy="9.7" r="1.7" />
+      <path d="M4.3 13.3c.4-1.4 1.5-2.2 2.7-2.2s2.3.8 2.7 2.2" />
+      <path d="M12.5 8h3M12.5 10.5h3" />
+    </svg>
+  )
+}
+
 function UsersIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -583,6 +1025,16 @@ function MailIcon({ className }: { className?: string }) {
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <rect x="2.3" y="4.5" width="15.4" height="11" rx="1.6" />
       <path d="M3 5.5l7 6 7-6" />
+    </svg>
+  )
+}
+
+function FileTextIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M5.5 2.8h6l3 3v10.4a1 1 0 01-1 1h-8a1 1 0 01-1-1V3.8a1 1 0 011-1z" />
+      <path d="M11.5 2.8v3h3" />
+      <path d="M7 10.2h6M7 13h6M7 7.5h2.5" />
     </svg>
   )
 }
@@ -1282,9 +1734,10 @@ function DetailPane({
 
   return (
     <>
-    <div className="w-[310px] shrink-0 bg-white border-l-[3px] border-blue-500 flex flex-col h-full shadow-lg overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-black/40 flex justify-end" onClick={onClose}>
+    <div className="w-[440px] max-w-full bg-white flex flex-col h-full shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
       {/* Pane header */}
-      <div className="flex items-start justify-between px-4 py-4 border-b border-gray-100">
+      <div className="flex items-start justify-between px-6 py-5 border-b border-gray-100">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
@@ -1293,7 +1746,7 @@ function DetailPane({
           <p className="text-[14px] font-semibold text-gray-900 mt-0.5 truncate">{contact.name}</p>
           <p className="text-[11px] text-gray-400 mt-0.5">{contact.source}{contact.hnNumber ? ` · ${contact.hnNumber}` : ''} · {contact.lastActive}</p>
         </div>
-        <button onClick={onClose} className="text-gray-300 hover:text-gray-500 text-lg leading-none shrink-0 ml-2 mt-0.5">×</button>
+        <button onClick={onClose} className="text-gray-300 hover:text-gray-500 text-xl leading-none shrink-0 ml-2">×</button>
       </div>
 
       {/* Scrollable body */}
@@ -1495,6 +1948,7 @@ function DetailPane({
         </button>
       </div>
     </div>
+    </div>
 
     {confirmCloseOpen && (
       <ConfirmModal
@@ -1521,11 +1975,11 @@ function DetailPane({
   )
 }
 
-// ─── Activity Log Drawer (department view) ───────────────────────────────────
+// ─── Activity Log Drawer (department view + standalone request modules) ─────
 // Docked side panel matching DetailPane's look, scoped to just the activity
 // log — department views don't get the full PFSD detail pane, only this.
 
-function ActivityLogDrawer({ contact, dept, onClose }: { contact: Contact; dept: Dept; onClose: () => void }) {
+function ActivityLogDrawer({ contact, dept, onClose }: { contact: Contact; dept?: Dept; onClose: () => void }) {
   // Department view only sees its own activity, not other departments' — the
   // shared log is a flat string list with no owner field, so a dept's own
   // entries are identified by the dept's name appearing in the message (every
@@ -1533,35 +1987,40 @@ function ActivityLogDrawer({ contact, dept, onClose }: { contact: Contact; dept:
   // PFSD by X", etc. — includes the dept name). PFSD-only/admin entries (case
   // closed, priority set, chain reassigned...) never name a dept and are
   // filtered out here, since those belong to the admin-level view, not this one.
-  const visibleLog = contact.activityLog.filter(log => log.includes(dept))
+  // The standalone request modules (Reservations/Documents/Medicine/Support)
+  // have no department concept at all, so they pass no `dept` and see the
+  // full, unfiltered log.
+  const visibleLog = dept ? contact.activityLog.filter(log => log.includes(dept)) : contact.activityLog
 
   return (
-    <div className="w-[310px] shrink-0 bg-white border-l-[3px] border-blue-500 flex flex-col h-full shadow-lg overflow-hidden">
-      <div className="flex items-start justify-between px-4 py-4 border-b border-gray-100">
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
-            <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wider">Activity Log · {dept}</p>
+    <div className="fixed inset-0 z-50 bg-black/40 flex justify-end" onClick={onClose}>
+      <div className="w-[440px] max-w-full h-full bg-white shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="flex items-start justify-between px-6 py-5 border-b border-gray-100">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+              <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wider">Activity Log{dept ? ` · ${dept}` : ''}</p>
+            </div>
+            <p className="text-[14px] font-semibold text-gray-900 mt-0.5 truncate">{contact.name}</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">{contact.source}{contact.hnNumber ? ` · ${contact.hnNumber}` : ''} · {contact.lastActive}</p>
           </div>
-          <p className="text-[14px] font-semibold text-gray-900 mt-0.5 truncate">{contact.name}</p>
-          <p className="text-[11px] text-gray-400 mt-0.5">{contact.source}{contact.hnNumber ? ` · ${contact.hnNumber}` : ''} · {contact.lastActive}</p>
+          <button onClick={onClose} className="text-gray-300 hover:text-gray-500 text-xl leading-none shrink-0 ml-2">×</button>
         </div>
-        <button onClick={onClose} className="text-gray-300 hover:text-gray-500 text-lg leading-none shrink-0 ml-2 mt-0.5">×</button>
-      </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4">
-        {visibleLog.length === 0 ? (
-          <p className="text-[12px] text-gray-300 italic">No activity yet for {dept}</p>
-        ) : (
-          <div className="space-y-2.5">
-            {visibleLog.map((log, i) => (
-              <div key={i} className="flex gap-2 items-start">
-                <span className={`w-1 h-1 rounded-full shrink-0 mt-[6px] ${activityLogTone(log)}`} />
-                <p className="text-[12px] text-gray-500 leading-relaxed">{log}</p>
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="flex-1 overflow-y-auto px-6 py-5">
+          {visibleLog.length === 0 ? (
+            <p className="text-[12px] text-gray-300 italic">No activity yet{dept ? ` for ${dept}` : ''}</p>
+          ) : (
+            <div className="space-y-2.5">
+              {visibleLog.map((log, i) => (
+                <div key={i} className="flex gap-2 items-start">
+                  <span className={`w-1 h-1 rounded-full shrink-0 mt-[6px] ${activityLogTone(log)}`} />
+                  <p className="text-[12px] text-gray-500 leading-relaxed">{log}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -2406,6 +2865,1402 @@ function ManualPage({
   )
 }
 
+// ─── Reservation Detail Pane (row click) — full patient/request info ────────
+// A modal-style overlay (dims the whole app), distinct from ActivityLogDrawer's
+// in-flow docked panel — this is the "detail" pane, that's the "history" pane;
+// only one row's worth of either is ever open at a time, but they're
+// independent so both can be open together if the icon and a row are clicked.
+
+function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-6 last:mb-0">
+      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">{title}</p>
+      <div className="space-y-3">{children}</div>
+    </div>
+  )
+}
+
+function DetailRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <span className="flex items-center gap-2 text-[13px] text-gray-500 shrink-0">
+        <span className="text-blue-400 shrink-0">{icon}</span>
+        {label}
+      </span>
+      <span className="text-[13px] font-medium text-gray-900 text-right">{value}</span>
+    </div>
+  )
+}
+
+function ReservationDetailPane({ reservation, onClose }: { reservation: Reservation; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex justify-end" onClick={onClose}>
+      <div
+        className="w-[440px] max-w-full h-full bg-white shadow-2xl overflow-y-auto"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between px-6 py-5 border-b border-gray-100">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-[18px] font-semibold text-gray-900">{reservation.contact.name}</h2>
+              <SourceIcon source={reservation.contact.source} className="w-4 h-4 shrink-0" />
+              <span className="text-[11px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-700 whitespace-nowrap">
+                {reservation.visitorType}
+              </span>
+            </div>
+            <span className="inline-block mt-2 text-[12px] px-2.5 py-1 rounded-lg border border-blue-200 bg-blue-50 text-blue-600 font-medium">
+              {reservation.appointmentType}
+            </span>
+          </div>
+          <button onClick={onClose} className="text-gray-300 hover:text-gray-500 text-xl leading-none shrink-0 ml-2">×</button>
+        </div>
+
+        <div className="px-6 py-5">
+          <DetailSection title="Patient Information">
+            <DetailRow icon={<BuildingIcon className="w-4 h-4" />} label="Hospital" value={reservation.hospital} />
+            <DetailRow icon={<UserIcon className="w-4 h-4" />} label="Full Name" value={reservation.fullName} />
+            <DetailRow icon={<CalendarIcon className="w-4 h-4" />} label="Date of Birth" value={reservation.dateOfBirth} />
+            <DetailRow icon={<PhoneIcon className="w-4 h-4" />} label="Phone" value={reservation.contact.phone ?? '-'} />
+            <DetailRow icon={<MapPinIcon className="w-4 h-4" />} label="Address" value={reservation.address} />
+            <DetailRow icon={<IdCardIcon className="w-4 h-4" />} label="National ID / Passport No." value={reservation.nationalId} />
+          </DetailSection>
+
+          <DetailSection title="Request Details">
+            <DetailRow icon={<PencilIcon className="w-4 h-4" />} label="Purpose" value={reservation.purpose} />
+            <DetailRow icon={<FileTextIcon className="w-4 h-4" />} label="Health Package" value={reservation.healthPackage} />
+            <DetailRow icon={<CalendarIcon className="w-4 h-4" />} label="Preferred Date" value={reservation.scheduleDate} />
+            <DetailRow icon={<ClockIcon className="w-4 h-4" />} label="Preferred Time" value={reservation.scheduleTime} />
+          </DetailSection>
+
+          <DetailSection title="Created">
+            <DetailRow icon={<CalendarIcon className="w-4 h-4" />} label="Created" value={reservation.createdDate} />
+          </DetailSection>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Reservations Page ────────────────────────────────────────────────────────
+
+function ReservationsPage() {
+  const [reservations, setReservations] = useState<Reservation[]>(RESERVATIONS)
+  const [messageContact, setMessageContact] = useState<Contact | null>(null)
+  const [activityLogFor, setActivityLogFor] = useState<Contact | null>(null)
+  const [detailFor, setDetailFor] = useState<Reservation | null>(null)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'All' | ReservationStatus>('All')
+  const [hospitalFilter, setHospitalFilter] = useState('All')
+  const [visitorTypeFilter, setVisitorTypeFilter] = useState<'All' | VisitorType>('All')
+  const [assigneeFilter, setAssigneeFilter] = useState('All')
+  const [preferredDateFilter, setPreferredDateFilter] = useState('')
+  const [createdDateFilter, setCreatedDateFilter] = useState('')
+
+  const clearFilters = () => {
+    setSearch('')
+    setStatusFilter('All')
+    setHospitalFilter('All')
+    setVisitorTypeFilter('All')
+    setAssigneeFilter('All')
+    setPreferredDateFilter('')
+    setCreatedDateFilter('')
+  }
+
+  const updateReservation = (updated: Reservation) => {
+    setReservations(prev => prev.map(r => r.id === updated.id ? updated : r))
+    if (activityLogFor?.id === updated.contact.id) setActivityLogFor(updated.contact)
+    if (detailFor?.id === updated.id) setDetailFor(updated)
+  }
+
+  const visible = reservations.filter(r => {
+    if (statusFilter !== 'All' && r.status !== statusFilter) return false
+    if (hospitalFilter !== 'All' && r.hospital !== hospitalFilter) return false
+    if (visitorTypeFilter !== 'All' && r.visitorType !== visitorTypeFilter) return false
+    if (assigneeFilter === 'Unassigned' && r.assignee !== null) return false
+    if (assigneeFilter !== 'All' && assigneeFilter !== 'Unassigned' && r.assignee !== assigneeFilter) return false
+    if (!matchesLooseDate(r.scheduleDate, preferredDateFilter)) return false
+    if (!matchesLooseDate(r.createdDate, createdDateFilter)) return false
+    if (search) {
+      const q = search.toLowerCase()
+      const matches = r.contact.name.toLowerCase().includes(q) || (r.contact.hnNumber ?? '').toLowerCase().includes(q) || (r.contact.phone ?? '').includes(q)
+      if (!matches) return false
+    }
+    return true
+  })
+
+  const counts = {
+    Total: reservations.length,
+    Open: reservations.filter(r => r.status === 'Open').length,
+    Pending: reservations.filter(r => r.status === 'Pending').length,
+    Resolved: reservations.filter(r => r.status === 'Resolved').length,
+  }
+
+  // Order chosen so a single dominant status (the common case, per the reference
+  // design) reads clearly; with several non-zero statuses the bar segments by
+  // proportion left-to-right in this same order.
+  const BAR_COLOR: Record<ReservationStatus, string> = { Pending: 'bg-orange-500', Open: 'bg-red-500', Resolved: 'bg-emerald-500' }
+  const barSegments = (['Pending', 'Open', 'Resolved'] as ReservationStatus[])
+    .map(status => ({ status, count: counts[status] }))
+    .filter(s => s.count > 0)
+
+  return (
+    <>
+      <header className="flex items-center justify-between px-6 py-3.5 bg-white border-b border-gray-100 shrink-0">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Reservations</h1>
+          <p className="text-[11px] text-gray-400">CRM System · Mon, 20 Jul 2026</p>
+        </div>
+        <div className="w-8 h-8 rounded-full bg-blue-600 text-white text-[11px] font-bold flex items-center justify-center select-none">AP</div>
+      </header>
+
+      <div className="flex-1 overflow-y-auto p-6">
+        {/* Reservation Status Overview */}
+        <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-5 mb-5">
+          <p className="text-[13px] font-semibold text-gray-700 mb-3">Reservation Status Overview</p>
+          <div className="w-full h-9 rounded-lg bg-gray-100 overflow-hidden flex">
+            {barSegments.map(seg => (
+              <div
+                key={seg.status}
+                style={{ width: `${(seg.count / counts.Total) * 100}%` }}
+                className={`flex items-center justify-center text-white text-[12px] font-semibold whitespace-nowrap ${BAR_COLOR[seg.status]}`}
+              >
+                {seg.status} {seg.count}
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2 mt-3">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white text-[12px] font-semibold text-gray-700">
+              Total <span className="font-bold">{counts.Total}</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white text-[12px] font-semibold text-gray-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> Open <span className="font-bold">{counts.Open}</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white text-[12px] font-semibold text-gray-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500" /> Pending <span className="font-bold">{counts.Pending}</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white text-[12px] font-semibold text-gray-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Resolved <span className="font-bold">{counts.Resolved}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Filters + table card */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-5">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
+              <div>
+                <label htmlFor="res-filter-search" className="text-[11px] font-semibold text-gray-500">Patient ID / Phone</label>
+                <div className="relative mt-1">
+                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
+                  <input
+                    id="res-filter-search"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder="Search ID / Phone"
+                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="res-filter-status" className="text-[11px] font-semibold text-gray-500">Status</label>
+                <div className="relative mt-1">
+                  <select
+                    id="res-filter-status"
+                    value={statusFilter}
+                    onChange={e => setStatusFilter(e.target.value as 'All' | ReservationStatus)}
+                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                  >
+                    <option value="All">All</option>
+                    <option value="Open">Open</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Resolved">Resolved</option>
+                  </select>
+                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="res-filter-hospital" className="text-[11px] font-semibold text-gray-500">Hospital</label>
+                <div className="relative mt-1">
+                  <select
+                    id="res-filter-hospital"
+                    value={hospitalFilter}
+                    onChange={e => setHospitalFilter(e.target.value)}
+                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                  >
+                    <option value="All">All</option>
+                    {HOSPITALS.map(h => <option key={h} value={h}>{h}</option>)}
+                  </select>
+                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="res-filter-visitor-type" className="text-[11px] font-semibold text-gray-500">Visitor Type</label>
+                <div className="relative mt-1">
+                  <select
+                    id="res-filter-visitor-type"
+                    value={visitorTypeFilter}
+                    onChange={e => setVisitorTypeFilter(e.target.value as 'All' | VisitorType)}
+                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                  >
+                    <option value="All">All</option>
+                    <option value="First Visit">First Visit</option>
+                    <option value="Follow-up">Follow-up</option>
+                  </select>
+                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="res-filter-assignee" className="text-[11px] font-semibold text-gray-500">Assignee</label>
+                <div className="relative mt-1">
+                  <select
+                    id="res-filter-assignee"
+                    value={assigneeFilter}
+                    onChange={e => setAssigneeFilter(e.target.value)}
+                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                  >
+                    <option value="All">All</option>
+                    <option value="Unassigned">Unassigned</option>
+                    {STAFF_MEMBERS.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="res-filter-preferred-date" className="text-[11px] font-semibold text-gray-500">Preferred Date</label>
+                <DateFilterInput id="res-filter-preferred-date" value={preferredDateFilter} onChange={setPreferredDateFilter} />
+              </div>
+
+              <div>
+                <label htmlFor="res-filter-created-date" className="text-[11px] font-semibold text-gray-500">Created Date</label>
+                <DateFilterInput id="res-filter-created-date" value={createdDateFilter} onChange={setCreatedDateFilter} />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-orange-500 bg-orange-50 hover:bg-orange-100 transition-colors"
+              >
+                <RefreshIcon className="w-3.5 h-3.5" /> Clear
+              </button>
+              <span className="text-[11px] text-gray-400 whitespace-nowrap">{visible.length} results</span>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-100">
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Contact</th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">
+                    <span className="inline-flex items-center gap-1" title="Current reservation status">
+                      Status <HelpCircleIcon className="w-3 h-3 text-gray-300" />
+                    </span>
+                  </th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">
+                    <span className="inline-flex items-center gap-1" title="Staff member handling this reservation">
+                      Assignee <HelpCircleIcon className="w-3 h-3 text-gray-300" />
+                    </span>
+                  </th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5 whitespace-nowrap">Appointment Type</th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Schedule</th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Doctor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map(r => (
+                  <tr
+                    key={r.id}
+                    onClick={() => setDetailFor(r)}
+                    className="border-b border-gray-50 hover:bg-gray-50/70 transition-colors cursor-pointer"
+                  >
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <Avatar initials={r.contact.initials} color={r.contact.color} />
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[13px] font-semibold text-gray-900">{r.contact.name}</span>
+                            <SourceIcon source={r.contact.source} className="w-3.5 h-3.5 shrink-0" />
+                            <span className="text-[10px] px-1.5 py-px rounded-full font-bold bg-emerald-100 text-emerald-700 leading-none">
+                              {r.visitorType}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-gray-400 mt-0.5">
+                            Created: <span className="text-blue-500 font-medium">{r.createdDate}</span>
+                          </p>
+                          <div className="flex items-center gap-2.5 mt-1" onClick={e => e.stopPropagation()}>
+                            <button
+                              onClick={() => setMessageContact(r.contact)}
+                              title="Message"
+                              className="text-blue-500 hover:text-blue-700 transition-colors"
+                            >
+                              <ChatBubbleIcon className="w-4 h-4" />
+                            </button>
+                            <span className="text-emerald-500">
+                              <PhoneIcon className="w-4 h-4" />
+                            </span>
+                            <button
+                              onClick={() => setActivityLogFor(r.contact)}
+                              title="Activity Log"
+                              className="text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                              <ActivityLogIcon className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
+                      <div className="relative inline-block">
+                        <select
+                          value={r.status}
+                          onChange={e => {
+                            const status = e.target.value as ReservationStatus
+                            updateReservation({
+                              ...r,
+                              status,
+                              contact: { ...r.contact, activityLog: [`Status changed to ${status} · just now`, ...r.contact.activityLog] },
+                            })
+                          }}
+                          className={`appearance-none pl-3 pr-7 py-1 rounded-full text-[12px] font-semibold cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400 ${HUE[RESERVATION_STATUS_HUE[r.status]].pill}`}
+                        >
+                          <option value="Open">Open</option>
+                          <option value="Pending">Pending</option>
+                          <option value="Resolved">Resolved</option>
+                        </select>
+                        <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none opacity-60" />
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
+                      <div className="relative inline-block">
+                        <select
+                          value={r.assignee ?? ''}
+                          onChange={e => {
+                            const assignee = e.target.value || null
+                            updateReservation({
+                              ...r,
+                              assignee,
+                              contact: { ...r.contact, activityLog: [assignee ? `Assigned to ${assignee} · just now` : 'Unassigned · just now', ...r.contact.activityLog] },
+                            })
+                          }}
+                          className="appearance-none pl-7 pr-7 py-1.5 rounded-lg border border-gray-200 text-[12px] font-medium text-gray-700 bg-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        >
+                          <option value="">Unassigned</option>
+                          {STAFF_MEMBERS.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                        <UserIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                        <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3.5 text-[13px] text-gray-700">{r.appointmentType}</td>
+
+                    <td className="px-4 py-3.5">
+                      <p className="text-[13px] text-gray-700">{r.scheduleDate}</p>
+                      <span className="inline-block mt-0.5 text-[11px] px-1.5 py-px rounded border border-blue-200 bg-blue-50 text-blue-600 font-medium">
+                        {r.scheduleTime}
+                      </span>
+                    </td>
+
+                    <td className="px-4 py-3.5 text-[13px] text-gray-700">{r.doctor}</td>
+                  </tr>
+                ))}
+                {visible.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-10 text-center text-[13px] text-gray-400">No reservations match these filters.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {activityLogFor && (
+        <ActivityLogDrawer contact={activityLogFor} onClose={() => setActivityLogFor(null)} />
+      )}
+
+      {messageContact && (
+        <MessageBoxModal contact={messageContact} onClose={() => setMessageContact(null)} />
+      )}
+
+      {detailFor && (
+        <ReservationDetailPane reservation={detailFor} onClose={() => setDetailFor(null)} />
+      )}
+    </>
+  )
+}
+
+// ─── Documents Page ───────────────────────────────────────────────────────────
+
+function DocumentsPage() {
+  const [documents, setDocuments] = useState<DocumentRequest[]>(DOCUMENT_REQUESTS)
+  const [messageContact, setMessageContact] = useState<Contact | null>(null)
+  const [activityLogFor, setActivityLogFor] = useState<Contact | null>(null)
+  const [patientIdSearch, setPatientIdSearch] = useState('')
+  const [patientNameSearch, setPatientNameSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'All' | ReservationStatus>('All')
+  const [documentTypeFilter, setDocumentTypeFilter] = useState<'All' | DocumentType>('All')
+  const [assigneeFilter, setAssigneeFilter] = useState('All')
+  const [createdDateFilter, setCreatedDateFilter] = useState('')
+  const [receiveMethodFilter, setReceiveMethodFilter] = useState<'All' | ReceiveMethod>('All')
+
+  const clearFilters = () => {
+    setPatientIdSearch('')
+    setPatientNameSearch('')
+    setStatusFilter('All')
+    setDocumentTypeFilter('All')
+    setAssigneeFilter('All')
+    setCreatedDateFilter('')
+    setReceiveMethodFilter('All')
+  }
+
+  const updateDocument = (updated: DocumentRequest) => {
+    setDocuments(prev => prev.map(d => d.id === updated.id ? updated : d))
+    if (activityLogFor?.id === updated.contact.id) setActivityLogFor(updated.contact)
+  }
+
+  const visible = documents.filter(d => {
+    if (statusFilter !== 'All' && d.status !== statusFilter) return false
+    if (documentTypeFilter !== 'All' && d.documentType !== documentTypeFilter) return false
+    if (assigneeFilter === 'Unassigned' && d.assignee !== null) return false
+    if (assigneeFilter !== 'All' && assigneeFilter !== 'Unassigned' && d.assignee !== assigneeFilter) return false
+    if (receiveMethodFilter !== 'All' && d.receiveMethod !== receiveMethodFilter) return false
+    if (!matchesLooseDate(d.createdDate, createdDateFilter)) return false
+    if (patientIdSearch && !d.patientId.toLowerCase().includes(patientIdSearch.toLowerCase())) return false
+    if (patientNameSearch && !d.patientName.toLowerCase().includes(patientNameSearch.toLowerCase())) return false
+    return true
+  })
+
+  const counts = {
+    Total: documents.length,
+    Open: documents.filter(d => d.status === 'Open').length,
+    Pending: documents.filter(d => d.status === 'Pending').length,
+    Resolved: documents.filter(d => d.status === 'Resolved').length,
+  }
+
+  // Same left-to-right segment order as Reservations' overview bar, for the
+  // same reason: a single dominant status reads clearly, several non-zero
+  // ones split proportionally in this order.
+  const BAR_COLOR: Record<ReservationStatus, string> = { Pending: 'bg-orange-500', Open: 'bg-red-500', Resolved: 'bg-emerald-500' }
+  const barSegments = (['Pending', 'Open', 'Resolved'] as ReservationStatus[])
+    .map(status => ({ status, count: counts[status] }))
+    .filter(s => s.count > 0)
+
+  return (
+    <>
+      <header className="flex items-center justify-between px-6 py-3.5 bg-white border-b border-gray-100 shrink-0">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Documents</h1>
+          <p className="text-[11px] text-gray-400">CRM System · Mon, 20 Jul 2026</p>
+        </div>
+        <div className="w-8 h-8 rounded-full bg-blue-600 text-white text-[11px] font-bold flex items-center justify-center select-none">AP</div>
+      </header>
+
+      <div className="flex-1 overflow-y-auto p-6">
+        {/* Document Request Status Overview */}
+        <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-5 mb-5">
+          <p className="text-[13px] font-semibold text-gray-700 mb-3">Document Request Status Overview</p>
+          <div className="w-full h-9 rounded-lg bg-gray-100 overflow-hidden flex">
+            {barSegments.map(seg => (
+              <div
+                key={seg.status}
+                style={{ width: `${(seg.count / counts.Total) * 100}%` }}
+                className={`flex items-center justify-center text-white text-[12px] font-semibold whitespace-nowrap ${BAR_COLOR[seg.status]}`}
+              >
+                {seg.status} {seg.count}
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2 mt-3">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white text-[12px] font-semibold text-gray-700">
+              Total <span className="font-bold">{counts.Total}</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white text-[12px] font-semibold text-gray-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> Open <span className="font-bold">{counts.Open}</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white text-[12px] font-semibold text-gray-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500" /> Pending <span className="font-bold">{counts.Pending}</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white text-[12px] font-semibold text-gray-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Resolved <span className="font-bold">{counts.Resolved}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Filters + table card */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-5">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
+              <div>
+                <label htmlFor="doc-filter-patient-id" className="text-[11px] font-semibold text-gray-500">Patient ID</label>
+                <div className="relative mt-1">
+                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
+                  <input
+                    id="doc-filter-patient-id"
+                    value={patientIdSearch}
+                    onChange={e => setPatientIdSearch(e.target.value)}
+                    placeholder="Search ID"
+                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="doc-filter-patient-name" className="text-[11px] font-semibold text-gray-500">Patient Name</label>
+                <div className="relative mt-1">
+                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
+                  <input
+                    id="doc-filter-patient-name"
+                    value={patientNameSearch}
+                    onChange={e => setPatientNameSearch(e.target.value)}
+                    placeholder="Search Name"
+                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="doc-filter-status" className="text-[11px] font-semibold text-gray-500">Status</label>
+                <div className="relative mt-1">
+                  <select
+                    id="doc-filter-status"
+                    value={statusFilter}
+                    onChange={e => setStatusFilter(e.target.value as 'All' | ReservationStatus)}
+                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                  >
+                    <option value="All">All</option>
+                    <option value="Open">Open</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Resolved">Resolved</option>
+                  </select>
+                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="doc-filter-document-type" className="text-[11px] font-semibold text-gray-500">Document Type</label>
+                <div className="relative mt-1">
+                  <select
+                    id="doc-filter-document-type"
+                    value={documentTypeFilter}
+                    onChange={e => setDocumentTypeFilter(e.target.value as 'All' | DocumentType)}
+                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                  >
+                    <option value="All">All</option>
+                    {DOCUMENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="doc-filter-assignee" className="text-[11px] font-semibold text-gray-500">Assignee</label>
+                <div className="relative mt-1">
+                  <select
+                    id="doc-filter-assignee"
+                    value={assigneeFilter}
+                    onChange={e => setAssigneeFilter(e.target.value)}
+                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                  >
+                    <option value="All">All</option>
+                    <option value="Unassigned">Unassigned</option>
+                    {STAFF_MEMBERS.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="doc-filter-created-date" className="text-[11px] font-semibold text-gray-500">Created Date</label>
+                <DateFilterInput id="doc-filter-created-date" value={createdDateFilter} onChange={setCreatedDateFilter} />
+              </div>
+
+              <div>
+                <label htmlFor="doc-filter-receive-method" className="text-[11px] font-semibold text-gray-500">Receive Method</label>
+                <div className="relative mt-1">
+                  <select
+                    id="doc-filter-receive-method"
+                    value={receiveMethodFilter}
+                    onChange={e => setReceiveMethodFilter(e.target.value as 'All' | ReceiveMethod)}
+                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                  >
+                    <option value="All">All</option>
+                    {RECEIVE_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-orange-500 bg-orange-50 hover:bg-orange-100 transition-colors"
+              >
+                <RefreshIcon className="w-3.5 h-3.5" /> Clear
+              </button>
+              <span className="text-[11px] text-gray-400 whitespace-nowrap">{visible.length} results</span>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-100">
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Contact</th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">
+                    <span className="inline-flex items-center gap-1" title="Current document request status">
+                      Status <HelpCircleIcon className="w-3 h-3 text-gray-300" />
+                    </span>
+                  </th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">
+                    <span className="inline-flex items-center gap-1" title="Staff member handling this request">
+                      Assignee <HelpCircleIcon className="w-3 h-3 text-gray-300" />
+                    </span>
+                  </th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Document</th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5 whitespace-nowrap">Patient Name/ID</th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Receive</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map(d => (
+                  <tr key={d.id} className="border-b border-gray-50 hover:bg-gray-50/70 transition-colors">
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <Avatar initials={d.contact.initials} color={d.contact.color} />
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[13px] font-semibold text-gray-900">{d.contact.name}</span>
+                            <SourceIcon source={d.contact.source} className="w-3.5 h-3.5 shrink-0" />
+                          </div>
+                          <p className="text-[11px] text-gray-400 mt-0.5">
+                            Created on <span className="text-blue-500 font-medium">{d.createdDate}</span>
+                          </p>
+                          <div className="flex items-center gap-2.5 mt-1">
+                            <button
+                              onClick={() => setMessageContact(d.contact)}
+                              title="Message"
+                              className="text-blue-500 hover:text-blue-700 transition-colors"
+                            >
+                              <ChatBubbleIcon className="w-4 h-4" />
+                            </button>
+                            <span className="text-emerald-500">
+                              <PhoneIcon className="w-4 h-4" />
+                            </span>
+                            <button
+                              onClick={() => setActivityLogFor(d.contact)}
+                              title="Activity Log"
+                              className="text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                              <ActivityLogIcon className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3.5">
+                      <div className="relative inline-block">
+                        <select
+                          value={d.status}
+                          onChange={e => {
+                            const status = e.target.value as ReservationStatus
+                            updateDocument({
+                              ...d,
+                              status,
+                              contact: { ...d.contact, activityLog: [`Status changed to ${status} · just now`, ...d.contact.activityLog] },
+                            })
+                          }}
+                          className={`appearance-none pl-3 pr-7 py-1 rounded-full text-[12px] font-semibold cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400 ${HUE[RESERVATION_STATUS_HUE[d.status]].pill}`}
+                        >
+                          <option value="Open">Open</option>
+                          <option value="Pending">Pending</option>
+                          <option value="Resolved">Resolved</option>
+                        </select>
+                        <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none opacity-60" />
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3.5">
+                      <div className="relative inline-block">
+                        <select
+                          value={d.assignee ?? ''}
+                          onChange={e => {
+                            const assignee = e.target.value || null
+                            updateDocument({
+                              ...d,
+                              assignee,
+                              contact: { ...d.contact, activityLog: [assignee ? `Assigned to ${assignee} · just now` : 'Unassigned · just now', ...d.contact.activityLog] },
+                            })
+                          }}
+                          className="appearance-none pl-7 pr-7 py-1.5 rounded-lg border border-gray-200 text-[12px] font-medium text-gray-700 bg-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        >
+                          <option value="">Unassigned</option>
+                          {STAFF_MEMBERS.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                        <UserIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                        <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3.5">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg border border-blue-200 bg-blue-50 text-blue-600 text-[12px] font-medium">
+                        {d.documentType}
+                      </span>
+                    </td>
+
+                    <td className="px-4 py-3.5">
+                      <p className="text-[13px] text-gray-700">{d.patientName}</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5">{d.patientId}</p>
+                    </td>
+
+                    <td className="px-4 py-3.5">
+                      <p className="text-[13px] text-gray-700">{d.receiveMethod}</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5">{d.receiveDate}</p>
+                    </td>
+                  </tr>
+                ))}
+                {visible.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-10 text-center text-[13px] text-gray-400">No document requests match these filters.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {activityLogFor && (
+        <ActivityLogDrawer contact={activityLogFor} onClose={() => setActivityLogFor(null)} />
+      )}
+
+      {messageContact && (
+        <MessageBoxModal contact={messageContact} onClose={() => setMessageContact(null)} />
+      )}
+    </>
+  )
+}
+
+// ─── Medicine Page ────────────────────────────────────────────────────────────
+
+function MedicinesPage() {
+  const [requests, setRequests] = useState<MedicineRequest[]>(MEDICINE_REQUESTS)
+  const [messageContact, setMessageContact] = useState<Contact | null>(null)
+  const [activityLogFor, setActivityLogFor] = useState<Contact | null>(null)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'All' | ReservationStatus>('All')
+  const [purposeFilter, setPurposeFilter] = useState<'All' | MedicinePurpose>('All')
+  const [assigneeFilter, setAssigneeFilter] = useState('All')
+  const [createdDateFilter, setCreatedDateFilter] = useState('')
+
+  const clearFilters = () => {
+    setSearch('')
+    setStatusFilter('All')
+    setPurposeFilter('All')
+    setAssigneeFilter('All')
+    setCreatedDateFilter('')
+  }
+
+  const updateRequest = (updated: MedicineRequest) => {
+    setRequests(prev => prev.map(r => r.id === updated.id ? updated : r))
+    if (activityLogFor?.id === updated.contact.id) setActivityLogFor(updated.contact)
+  }
+
+  const visible = requests.filter(r => {
+    if (statusFilter !== 'All' && r.status !== statusFilter) return false
+    if (purposeFilter !== 'All' && r.purpose !== purposeFilter) return false
+    if (assigneeFilter === 'Unassigned' && r.assignee !== null) return false
+    if (assigneeFilter !== 'All' && assigneeFilter !== 'Unassigned' && r.assignee !== assigneeFilter) return false
+    if (!matchesLooseDate(r.createdDate, createdDateFilter)) return false
+    if (search) {
+      const q = search.toLowerCase()
+      const matches = r.contact.name.toLowerCase().includes(q) || r.patientId.toLowerCase().includes(q) || (r.contact.phone ?? '').includes(q)
+      if (!matches) return false
+    }
+    return true
+  })
+
+  const counts = {
+    Total: requests.length,
+    Open: requests.filter(r => r.status === 'Open').length,
+    Pending: requests.filter(r => r.status === 'Pending').length,
+    Resolved: requests.filter(r => r.status === 'Resolved').length,
+  }
+
+  // Same segment order/rationale as Reservations' and Documents' overview bars.
+  const BAR_COLOR: Record<ReservationStatus, string> = { Pending: 'bg-orange-500', Open: 'bg-red-500', Resolved: 'bg-emerald-500' }
+  const barSegments = (['Pending', 'Open', 'Resolved'] as ReservationStatus[])
+    .map(status => ({ status, count: counts[status] }))
+    .filter(s => s.count > 0)
+
+  return (
+    <>
+      <header className="flex items-center justify-between px-6 py-3.5 bg-white border-b border-gray-100 shrink-0">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Medicine</h1>
+          <p className="text-[11px] text-gray-400">CRM System · Mon, 20 Jul 2026</p>
+        </div>
+        <div className="w-8 h-8 rounded-full bg-blue-600 text-white text-[11px] font-bold flex items-center justify-center select-none">AP</div>
+      </header>
+
+      <div className="flex-1 overflow-y-auto p-6">
+        {/* Medicine Request Status Overview */}
+        <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-5 mb-5">
+          <p className="text-[13px] font-semibold text-gray-700 mb-3">Medicine Request Status Overview</p>
+          <div className="w-full h-9 rounded-lg bg-gray-100 overflow-hidden flex">
+            {barSegments.map(seg => (
+              <div
+                key={seg.status}
+                style={{ width: `${(seg.count / counts.Total) * 100}%` }}
+                className={`flex items-center justify-center text-white text-[12px] font-semibold whitespace-nowrap ${BAR_COLOR[seg.status]}`}
+              >
+                {seg.status} {seg.count}
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2 mt-3">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white text-[12px] font-semibold text-gray-700">
+              Total <span className="font-bold">{counts.Total}</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white text-[12px] font-semibold text-gray-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> Open <span className="font-bold">{counts.Open}</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white text-[12px] font-semibold text-gray-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500" /> Pending <span className="font-bold">{counts.Pending}</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white text-[12px] font-semibold text-gray-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Resolved <span className="font-bold">{counts.Resolved}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Filters + table card */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-5">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+              <div>
+                <label htmlFor="med-filter-search" className="text-[11px] font-semibold text-gray-500">Patient ID / Phone</label>
+                <div className="relative mt-1">
+                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
+                  <input
+                    id="med-filter-search"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder="Search ID / Phone"
+                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="med-filter-status" className="text-[11px] font-semibold text-gray-500">Status</label>
+                <div className="relative mt-1">
+                  <select
+                    id="med-filter-status"
+                    value={statusFilter}
+                    onChange={e => setStatusFilter(e.target.value as 'All' | ReservationStatus)}
+                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                  >
+                    <option value="All">All</option>
+                    <option value="Open">Open</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Resolved">Resolved</option>
+                  </select>
+                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="med-filter-purpose" className="text-[11px] font-semibold text-gray-500">Purpose</label>
+                <div className="relative mt-1">
+                  <select
+                    id="med-filter-purpose"
+                    value={purposeFilter}
+                    onChange={e => setPurposeFilter(e.target.value as 'All' | MedicinePurpose)}
+                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                  >
+                    <option value="All">All Purposes</option>
+                    {MEDICINE_PURPOSES.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="med-filter-assignee" className="text-[11px] font-semibold text-gray-500">Assignee</label>
+                <div className="relative mt-1">
+                  <select
+                    id="med-filter-assignee"
+                    value={assigneeFilter}
+                    onChange={e => setAssigneeFilter(e.target.value)}
+                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                  >
+                    <option value="All">All</option>
+                    <option value="Unassigned">Unassigned</option>
+                    {STAFF_MEMBERS.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="med-filter-created-date" className="text-[11px] font-semibold text-gray-500">Created Date</label>
+                <DateFilterInput id="med-filter-created-date" value={createdDateFilter} onChange={setCreatedDateFilter} />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-orange-500 bg-orange-50 hover:bg-orange-100 transition-colors"
+              >
+                <RefreshIcon className="w-3.5 h-3.5" /> Clear
+              </button>
+              <span className="text-[11px] text-gray-400 whitespace-nowrap">{visible.length} results</span>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-100">
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Contact</th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">
+                    <span className="inline-flex items-center gap-1" title="Current medicine request status">
+                      Status <HelpCircleIcon className="w-3 h-3 text-gray-300" />
+                    </span>
+                  </th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">
+                    <span className="inline-flex items-center gap-1" title="Staff member handling this request">
+                      Assignee <HelpCircleIcon className="w-3 h-3 text-gray-300" />
+                    </span>
+                  </th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Purpose</th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Items</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map(r => (
+                  <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50/70 transition-colors">
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <Avatar initials={r.contact.initials} color={r.contact.color} />
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[13px] font-semibold text-gray-900">{r.contact.name}</span>
+                            <SourceIcon source={r.contact.source} className="w-3.5 h-3.5 shrink-0" />
+                          </div>
+                          <p className="text-[11px] text-gray-400 mt-0.5">
+                            PID/Ph: <span className="text-blue-500 font-medium">{r.patientId}</span>
+                          </p>
+                          <p className="text-[11px] text-gray-400 mt-0.5">
+                            Created: <span className="text-blue-500 font-medium">{r.createdDate}</span>
+                          </p>
+                          <div className="flex items-center gap-2.5 mt-1">
+                            <button
+                              onClick={() => setMessageContact(r.contact)}
+                              title="Message"
+                              className="text-blue-500 hover:text-blue-700 transition-colors"
+                            >
+                              <ChatBubbleIcon className="w-4 h-4" />
+                            </button>
+                            <span className="text-emerald-500">
+                              <PhoneIcon className="w-4 h-4" />
+                            </span>
+                            <button
+                              onClick={() => setActivityLogFor(r.contact)}
+                              title="Activity Log"
+                              className="text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                              <ActivityLogIcon className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3.5">
+                      <div className="relative inline-block">
+                        <select
+                          value={r.status}
+                          onChange={e => {
+                            const status = e.target.value as ReservationStatus
+                            updateRequest({
+                              ...r,
+                              status,
+                              contact: { ...r.contact, activityLog: [`Status changed to ${status} · just now`, ...r.contact.activityLog] },
+                            })
+                          }}
+                          className={`appearance-none pl-3 pr-7 py-1 rounded-full text-[12px] font-semibold cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400 ${HUE[RESERVATION_STATUS_HUE[r.status]].pill}`}
+                        >
+                          <option value="Open">Open</option>
+                          <option value="Pending">Pending</option>
+                          <option value="Resolved">Resolved</option>
+                        </select>
+                        <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none opacity-60" />
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3.5">
+                      <div className="relative inline-block">
+                        <select
+                          value={r.assignee ?? ''}
+                          onChange={e => {
+                            const assignee = e.target.value || null
+                            updateRequest({
+                              ...r,
+                              assignee,
+                              contact: { ...r.contact, activityLog: [assignee ? `Assigned to ${assignee} · just now` : 'Unassigned · just now', ...r.contact.activityLog] },
+                            })
+                          }}
+                          className="appearance-none pl-7 pr-7 py-1.5 rounded-lg border border-gray-200 text-[12px] font-medium text-gray-700 bg-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        >
+                          <option value="">Unassigned</option>
+                          {STAFF_MEMBERS.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                        <UserIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                        <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3.5">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-600 text-[12px] font-medium">
+                        {r.purpose}
+                      </span>
+                    </td>
+
+                    <td className="px-4 py-3.5 text-[13px] text-gray-700">{r.items}</td>
+                  </tr>
+                ))}
+                {visible.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-10 text-center text-[13px] text-gray-400">No medicine requests match these filters.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {activityLogFor && (
+        <ActivityLogDrawer contact={activityLogFor} onClose={() => setActivityLogFor(null)} />
+      )}
+
+      {messageContact && (
+        <MessageBoxModal contact={messageContact} onClose={() => setMessageContact(null)} />
+      )}
+    </>
+  )
+}
+
+// ─── Support Page ─────────────────────────────────────────────────────────────
+
+function SupportPage() {
+  const [requests, setRequests] = useState<SupportRequest[]>(SUPPORT_REQUESTS)
+  const [messageContact, setMessageContact] = useState<Contact | null>(null)
+  const [activityLogFor, setActivityLogFor] = useState<Contact | null>(null)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'All' | ReservationStatus>('All')
+  const [assigneeFilter, setAssigneeFilter] = useState('All')
+  const [createdDateFilter, setCreatedDateFilter] = useState('')
+
+  const clearFilters = () => {
+    setSearch('')
+    setStatusFilter('All')
+    setAssigneeFilter('All')
+    setCreatedDateFilter('')
+  }
+
+  const updateRequest = (updated: SupportRequest) => {
+    setRequests(prev => prev.map(r => r.id === updated.id ? updated : r))
+    if (activityLogFor?.id === updated.contact.id) setActivityLogFor(updated.contact)
+  }
+
+  const visible = requests.filter(r => {
+    if (statusFilter !== 'All' && r.status !== statusFilter) return false
+    if (assigneeFilter === 'Unassigned' && r.assignee !== null) return false
+    if (assigneeFilter !== 'All' && assigneeFilter !== 'Unassigned' && r.assignee !== assigneeFilter) return false
+    if (!matchesLooseDate(r.createdDate, createdDateFilter)) return false
+    if (search) {
+      const q = search.toLowerCase()
+      const matches = r.contact.name.toLowerCase().includes(q) || r.patientId.toLowerCase().includes(q) || (r.contact.phone ?? '').includes(q)
+      if (!matches) return false
+    }
+    return true
+  })
+
+  const counts = {
+    Total: requests.length,
+    Open: requests.filter(r => r.status === 'Open').length,
+    Pending: requests.filter(r => r.status === 'Pending').length,
+    Resolved: requests.filter(r => r.status === 'Resolved').length,
+  }
+
+  // Same segment order/rationale as the other modules' overview bars.
+  const BAR_COLOR: Record<ReservationStatus, string> = { Pending: 'bg-orange-500', Open: 'bg-red-500', Resolved: 'bg-emerald-500' }
+  const barSegments = (['Pending', 'Open', 'Resolved'] as ReservationStatus[])
+    .map(status => ({ status, count: counts[status] }))
+    .filter(s => s.count > 0)
+
+  return (
+    <>
+      <header className="flex items-center justify-between px-6 py-3.5 bg-white border-b border-gray-100 shrink-0">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Support</h1>
+          <p className="text-[11px] text-gray-400">CRM System · Mon, 20 Jul 2026</p>
+        </div>
+        <div className="w-8 h-8 rounded-full bg-blue-600 text-white text-[11px] font-bold flex items-center justify-center select-none">AP</div>
+      </header>
+
+      <div className="flex-1 overflow-y-auto p-6">
+        {/* Request Status Overview */}
+        <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-5 mb-5">
+          <p className="text-[13px] font-semibold text-gray-700 mb-3">Request Status Overview</p>
+          <div className="w-full h-9 rounded-lg bg-gray-100 overflow-hidden flex">
+            {barSegments.map(seg => (
+              <div
+                key={seg.status}
+                style={{ width: `${(seg.count / counts.Total) * 100}%` }}
+                className={`flex items-center justify-center text-white text-[12px] font-semibold whitespace-nowrap ${BAR_COLOR[seg.status]}`}
+              >
+                {seg.status} {seg.count}
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2 mt-3">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white text-[12px] font-semibold text-gray-700">
+              Total <span className="font-bold">{counts.Total}</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white text-[12px] font-semibold text-gray-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> Open <span className="font-bold">{counts.Open}</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white text-[12px] font-semibold text-gray-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500" /> Pending <span className="font-bold">{counts.Pending}</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white text-[12px] font-semibold text-gray-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Resolved <span className="font-bold">{counts.Resolved}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Filters + table card */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-5">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+              <div>
+                <label htmlFor="sup-filter-search" className="text-[11px] font-semibold text-gray-500">Patient ID / Phone</label>
+                <div className="relative mt-1">
+                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
+                  <input
+                    id="sup-filter-search"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder="Search ID / Phone"
+                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="sup-filter-status" className="text-[11px] font-semibold text-gray-500">Status</label>
+                <div className="relative mt-1">
+                  <select
+                    id="sup-filter-status"
+                    value={statusFilter}
+                    onChange={e => setStatusFilter(e.target.value as 'All' | ReservationStatus)}
+                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                  >
+                    <option value="All">All</option>
+                    <option value="Open">Open</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Resolved">Resolved</option>
+                  </select>
+                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="sup-filter-assignee" className="text-[11px] font-semibold text-gray-500">Assignee</label>
+                <div className="relative mt-1">
+                  <select
+                    id="sup-filter-assignee"
+                    value={assigneeFilter}
+                    onChange={e => setAssigneeFilter(e.target.value)}
+                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                  >
+                    <option value="All">All</option>
+                    <option value="Unassigned">Unassigned</option>
+                    {STAFF_MEMBERS.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="sup-filter-created-date" className="text-[11px] font-semibold text-gray-500">Created Date</label>
+                <DateFilterInput id="sup-filter-created-date" value={createdDateFilter} onChange={setCreatedDateFilter} />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-orange-500 bg-orange-50 hover:bg-orange-100 transition-colors"
+              >
+                <RefreshIcon className="w-3.5 h-3.5" /> Clear
+              </button>
+              <span className="text-[11px] text-gray-400 whitespace-nowrap">{visible.length} results</span>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-100">
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Contact</th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">
+                    <span className="inline-flex items-center gap-1" title="Current support request status">
+                      Status <HelpCircleIcon className="w-3 h-3 text-gray-300" />
+                    </span>
+                  </th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">
+                    <span className="inline-flex items-center gap-1" title="Staff member handling this request">
+                      Assignee <HelpCircleIcon className="w-3 h-3 text-gray-300" />
+                    </span>
+                  </th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Purpose</th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Comments</th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5 whitespace-nowrap">Callback No</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map(r => (
+                  <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50/70 transition-colors">
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <Avatar initials={r.contact.initials} color={r.contact.color} />
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[13px] font-semibold text-gray-900">{r.contact.name}</span>
+                            <SourceIcon source={r.contact.source} className="w-3.5 h-3.5 shrink-0" />
+                          </div>
+                          <p className="text-[11px] text-gray-400 mt-0.5">
+                            PID/Ph: <span className="text-blue-500 font-medium">{r.patientId}</span>
+                          </p>
+                          <p className="text-[11px] text-gray-400 mt-0.5">
+                            Created <span className="text-blue-500 font-medium">{r.createdDate}</span>
+                          </p>
+                          <div className="flex items-center gap-2.5 mt-1">
+                            <button
+                              onClick={() => setMessageContact(r.contact)}
+                              title="Message"
+                              className="text-blue-500 hover:text-blue-700 transition-colors"
+                            >
+                              <ChatBubbleIcon className="w-4 h-4" />
+                            </button>
+                            <span className="text-emerald-500">
+                              <PhoneIcon className="w-4 h-4" />
+                            </span>
+                            <button
+                              onClick={() => setActivityLogFor(r.contact)}
+                              title="Activity Log"
+                              className="text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                              <ActivityLogIcon className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3.5">
+                      <div className="relative inline-block">
+                        <select
+                          value={r.status}
+                          onChange={e => {
+                            const status = e.target.value as ReservationStatus
+                            updateRequest({
+                              ...r,
+                              status,
+                              contact: { ...r.contact, activityLog: [`Status changed to ${status} · just now`, ...r.contact.activityLog] },
+                            })
+                          }}
+                          className={`appearance-none pl-3 pr-7 py-1 rounded-full text-[12px] font-semibold cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400 ${HUE[RESERVATION_STATUS_HUE[r.status]].pill}`}
+                        >
+                          <option value="Open">Open</option>
+                          <option value="Pending">Pending</option>
+                          <option value="Resolved">Resolved</option>
+                        </select>
+                        <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none opacity-60" />
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3.5">
+                      <div className="relative inline-block">
+                        <select
+                          value={r.assignee ?? ''}
+                          onChange={e => {
+                            const assignee = e.target.value || null
+                            updateRequest({
+                              ...r,
+                              assignee,
+                              contact: { ...r.contact, activityLog: [assignee ? `Assigned to ${assignee} · just now` : 'Unassigned · just now', ...r.contact.activityLog] },
+                            })
+                          }}
+                          className="appearance-none pl-7 pr-7 py-1.5 rounded-lg border border-gray-200 text-[12px] font-medium text-gray-700 bg-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        >
+                          <option value="">Unassigned</option>
+                          {STAFF_MEMBERS.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                        <UserIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                        <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3.5">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-600 text-[12px] font-medium">
+                        {r.purpose}
+                      </span>
+                    </td>
+
+                    <td className="px-4 py-3.5 text-[13px] text-gray-700 max-w-[220px] truncate" title={r.comments}>{r.comments}</td>
+
+                    <td className="px-4 py-3.5 text-[13px] text-gray-700 whitespace-nowrap">{r.callbackNo}</td>
+                  </tr>
+                ))}
+                {visible.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-10 text-center text-[13px] text-gray-400">No support requests match these filters.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {activityLogFor && (
+        <ActivityLogDrawer contact={activityLogFor} onClose={() => setActivityLogFor(null)} />
+      )}
+
+      {messageContact && (
+        <MessageBoxModal contact={messageContact} onClose={() => setMessageContact(null)} />
+      )}
+    </>
+  )
+}
+
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 const AVATAR_COLORS = ['#3b82f6', '#f97316', '#8b5cf6', '#10b981', '#06b6d4', '#ec4899', '#f59e0b', '#6366f1']
@@ -2420,7 +4275,7 @@ function initialsFor(name: string, patientId: string): string {
 export default function App() {
   const [contacts, setContacts] = useState<Contact[]>(INIT)
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [page, setPage] = useState<'Inbox' | 'Manual'>('Inbox')
+  const [page, setPage] = useState<'Inbox' | 'Manual' | 'Reservations' | 'Documents' | 'Medicines' | 'Support'>('Inbox')
   const [viewAs, setViewAs] = useState<ViewAs>('PFSD')
   const [paneContact, setPaneContact] = useState<Contact | null>(null)
   const [activityLogContact, setActivityLogContact] = useState<Contact | null>(null)
@@ -2606,10 +4461,11 @@ export default function App() {
             { label: 'Inbox', icon: <MailIcon className="w-[18px] h-[18px]" />, badge: 3 },
             { label: 'Manual', icon: <PencilIcon className="w-[18px] h-[18px]" /> },
             { label: 'Reservations', icon: <CalendarIcon className="w-[18px] h-[18px]" />, badge: 3 },
+            { label: 'Documents', icon: <FileTextIcon className="w-[18px] h-[18px]" /> },
             { label: 'Medicines', icon: <PillIcon className="w-[18px] h-[18px]" /> },
             { label: 'Support', icon: <LifeBuoyIcon className="w-[18px] h-[18px]" />, badge: 2 },
           ].map(item => {
-            const isNavigable = item.label === 'Inbox' || item.label === 'Manual'
+            const isNavigable = item.label === 'Inbox' || item.label === 'Manual' || item.label === 'Reservations' || item.label === 'Documents' || item.label === 'Medicines' || item.label === 'Support'
             const isActive = isNavigable && item.label === page
             return (
               <button
@@ -2617,8 +4473,9 @@ export default function App() {
                 title={!sidebarOpen ? item.label : undefined}
                 onClick={() => {
                   if (!isNavigable) return
-                  setPage(item.label as 'Inbox' | 'Manual')
+                  setPage(item.label as 'Inbox' | 'Manual' | 'Reservations' | 'Documents' | 'Medicines' | 'Support')
                   setPaneContact(null)
+                  setActivityLogContact(null)
                 }}
                 className={`w-full flex items-center py-2 rounded-lg text-[13px] transition-colors whitespace-nowrap ${sidebarOpen ? 'justify-between px-3' : 'justify-center px-0'} ${isActive ? 'bg-blue-600 text-white' : 'text-white/60 hover:bg-white/8 hover:text-white'}`}
               >
@@ -2660,7 +4517,15 @@ export default function App() {
 
         {/* ── Main content ─────────────────────────────────────────────────── */}
         <main className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {page === 'Manual' ? (
+        {page === 'Support' ? (
+          <SupportPage />
+        ) : page === 'Medicines' ? (
+          <MedicinesPage />
+        ) : page === 'Documents' ? (
+          <DocumentsPage />
+        ) : page === 'Reservations' ? (
+          <ReservationsPage />
+        ) : page === 'Manual' ? (
           <ManualPage
             contacts={contacts}
             onAdd={addManualContact}
