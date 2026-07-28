@@ -366,6 +366,15 @@ function PhoneIcon({ className }: { className?: string }) {
   )
 }
 
+function ActivityLogIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="10" cy="10" r="7" />
+      <path d="M10 6v4.2l2.8 1.6" />
+    </svg>
+  )
+}
+
 function TelegramGlyph({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 20 20" className={className}>
@@ -1512,6 +1521,52 @@ function DetailPane({
   )
 }
 
+// ─── Activity Log Drawer (department view) ───────────────────────────────────
+// Docked side panel matching DetailPane's look, scoped to just the activity
+// log — department views don't get the full PFSD detail pane, only this.
+
+function ActivityLogDrawer({ contact, dept, onClose }: { contact: Contact; dept: Dept; onClose: () => void }) {
+  // Department view only sees its own activity, not other departments' — the
+  // shared log is a flat string list with no owner field, so a dept's own
+  // entries are identified by the dept's name appearing in the message (every
+  // dept-authored template — "started working", "Assigned to X", "Returned to
+  // PFSD by X", etc. — includes the dept name). PFSD-only/admin entries (case
+  // closed, priority set, chain reassigned...) never name a dept and are
+  // filtered out here, since those belong to the admin-level view, not this one.
+  const visibleLog = contact.activityLog.filter(log => log.includes(dept))
+
+  return (
+    <div className="w-[310px] shrink-0 bg-white border-l-[3px] border-blue-500 flex flex-col h-full shadow-lg overflow-hidden">
+      <div className="flex items-start justify-between px-4 py-4 border-b border-gray-100">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+            <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wider">Activity Log · {dept}</p>
+          </div>
+          <p className="text-[14px] font-semibold text-gray-900 mt-0.5 truncate">{contact.name}</p>
+          <p className="text-[11px] text-gray-400 mt-0.5">{contact.source}{contact.hnNumber ? ` · ${contact.hnNumber}` : ''} · {contact.lastActive}</p>
+        </div>
+        <button onClick={onClose} className="text-gray-300 hover:text-gray-500 text-lg leading-none shrink-0 ml-2 mt-0.5">×</button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        {visibleLog.length === 0 ? (
+          <p className="text-[12px] text-gray-300 italic">No activity yet for {dept}</p>
+        ) : (
+          <div className="space-y-2.5">
+            {visibleLog.map((log, i) => (
+              <div key={i} className="flex gap-2 items-start">
+                <span className={`w-1 h-1 rounded-full shrink-0 mt-[6px] ${activityLogTone(log)}`} />
+                <p className="text-[12px] text-gray-500 leading-relaxed">{log}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Notes Modal (internal admin notes, not a two-way patient chat) ──────────
 
 const CURRENT_ADMIN_NAME = 'PFSD Admin'
@@ -1608,6 +1663,7 @@ function ContactsTable({
   handleResume,
   handleMarkComplete,
   onReturn,
+  onOpenActivityLog,
   useIconActions = false,
   bare = false,
   lastMessageColumnLabel = 'Last Message',
@@ -1622,6 +1678,7 @@ function ContactsTable({
   handleResume: (c: Contact) => void
   handleMarkComplete: (c: Contact) => void
   onReturn: (c: Contact) => void
+  onOpenActivityLog?: (c: Contact) => void
   useIconActions?: boolean
   // Skips its own card chrome (border/shadow/rounded corners) when the caller
   // already wraps it in one, so filters + table can share a single card.
@@ -1714,6 +1771,15 @@ function ContactsTable({
                             <span className="text-emerald-500">
                               <PhoneIcon className="w-4 h-4" />
                             </span>
+                            {viewAs !== 'PFSD' && (
+                              <button
+                                onClick={() => onOpenActivityLog?.(contact)}
+                                title="Activity Log"
+                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                              >
+                                <ActivityLogIcon className="w-4 h-4" />
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -2357,6 +2423,7 @@ export default function App() {
   const [page, setPage] = useState<'Inbox' | 'Manual'>('Inbox')
   const [viewAs, setViewAs] = useState<ViewAs>('PFSD')
   const [paneContact, setPaneContact] = useState<Contact | null>(null)
+  const [activityLogContact, setActivityLogContact] = useState<Contact | null>(null)
   const [assignContact, setAssignContact] = useState<Contact | null>(null)
   const [assignMode, setAssignMode] = useState<'assign' | 'reassign'>('assign')
   const [returnContact, setReturnContact] = useState<Contact | null>(null)
@@ -2385,6 +2452,7 @@ export default function App() {
   const updateContact = (updated: Contact) => {
     setContacts(prev => prev.map(c => c.id === updated.id ? updated : c))
     if (paneContact?.id === updated.id) setPaneContact(updated)
+    if (activityLogContact?.id === updated.id) setActivityLogContact(updated)
   }
 
   const handleStart = (contact: Contact) => {
@@ -2629,7 +2697,7 @@ export default function App() {
                     {ALL_VIEWS.map(v => (
                       <button
                         key={v}
-                        onClick={() => { setViewAs(v); setViewOpen(false); setPaneContact(null) }}
+                        onClick={() => { setViewAs(v); setViewOpen(false); setPaneContact(null); setActivityLogContact(null) }}
                         className={`w-full text-left px-4 py-2 text-[13px] hover:bg-gray-50 flex items-center gap-2.5 ${viewAs === v ? 'text-blue-600 font-semibold' : 'text-gray-700'}`}
                       >
                         <span className={`w-1.5 h-1.5 rounded-full ${v === 'PFSD' ? 'bg-blue-400' : 'bg-violet-400'}`} />
@@ -2852,6 +2920,7 @@ export default function App() {
                 handleResume={handleResume}
                 handleMarkComplete={handleMarkComplete}
                 onReturn={c => setReturnContact(c)}
+                onOpenActivityLog={c => setActivityLogContact(c)}
                 useIconActions
                 bare
               />
@@ -2870,6 +2939,15 @@ export default function App() {
             onOpenAssign={() => { setAssignContact(paneContact); setAssignMode('assign') }}
             onOpenReassign={() => { setAssignContact(paneContact); setAssignMode('reassign') }}
             onMarkComplete={handleMarkComplete}
+          />
+        )}
+
+        {/* ── Activity Log Drawer (department view) ─────────────────────────── */}
+        {activityLogContact && viewAs !== 'PFSD' && (
+          <ActivityLogDrawer
+            contact={activityLogContact}
+            dept={viewAs}
+            onClose={() => setActivityLogContact(null)}
           />
         )}
       </div>
