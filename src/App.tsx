@@ -254,6 +254,42 @@ const STAFF_MEMBERS = ['Dr. Somchai P.', 'Dr. Ariya K.', 'Nurse Malee S.', 'Nurs
 
 const RESERVATION_STATUS_HUE: Record<ReservationStatus, Hue> = { Open: 'red', Pending: 'amber', Resolved: 'emerald' }
 
+// ── IT Staff · Activity Logs (mock only — no backing auth/audit system yet) ──
+type ActivityLogType = 'User Management' | 'Login' | 'Logout'
+
+interface ActivityLogRecord {
+  id: string
+  type: ActivityLogType
+  user: string
+  action: string
+  details: string
+  timestamp: string
+  ip: string
+}
+
+const ACTIVITY_LOG_TYPE_HUE: Record<ActivityLogType, Hue> = {
+  'User Management': 'indigo',
+  Login: 'emerald',
+  Logout: 'gray',
+}
+
+const IT_ACTIVITY_LOGS: ActivityLogRecord[] = [
+  { id: 'log-1', type: 'Login', user: 'Dr. Somchai P.', action: 'Signed in', details: 'Successful login via password', timestamp: '29 Jul 2026, 09:02 AM', ip: '192.168.1.14' },
+  { id: 'log-2', type: 'User Management', user: 'Kritsada W. (IT Admin)', action: 'Created user', details: 'Added new staff account "Nurse Ben T."', timestamp: '29 Jul 2026, 08:47 AM', ip: '192.168.1.2' },
+  { id: 'log-3', type: 'Logout', user: 'Nurse Malee S.', action: 'Signed out', details: 'Session ended by user', timestamp: '28 Jul 2026, 06:15 PM', ip: '192.168.1.30' },
+  { id: 'log-4', type: 'Login', user: 'Nurse Ben T.', action: 'Signed in', details: 'Successful login via password', timestamp: '28 Jul 2026, 08:58 AM', ip: '192.168.1.31' },
+  { id: 'log-5', type: 'User Management', user: 'Kritsada W. (IT Admin)', action: 'Updated permissions', details: '"Dr. Ariya K." role changed from Staff to Admin', timestamp: '28 Jul 2026, 08:40 AM', ip: '192.168.1.2' },
+  { id: 'log-6', type: 'Login', user: 'Dr. Ariya K.', action: 'Failed login attempt', details: 'Incorrect password (2nd attempt)', timestamp: '27 Jul 2026, 07:55 PM', ip: '203.0.113.42' },
+  { id: 'log-7', type: 'Login', user: 'Dr. Ariya K.', action: 'Signed in', details: 'Successful login via password', timestamp: '27 Jul 2026, 07:56 PM', ip: '203.0.113.42' },
+  { id: 'log-8', type: 'Logout', user: 'Dr. Somchai P.', action: 'Signed out', details: 'Session ended by user', timestamp: '27 Jul 2026, 05:30 PM', ip: '192.168.1.14' },
+  { id: 'log-9', type: 'User Management', user: 'Kritsada W. (IT Admin)', action: 'Deactivated user', details: 'Disabled account "Nurse Somsri T." (resigned)', timestamp: '26 Jul 2026, 03:12 PM', ip: '192.168.1.2' },
+  { id: 'log-10', type: 'Logout', user: 'Nurse Ben T.', action: 'Session expired', details: 'Auto logout after 30 min of inactivity', timestamp: '26 Jul 2026, 01:05 PM', ip: '192.168.1.31' },
+  { id: 'log-11', type: 'Login', user: 'Nurse Malee S.', action: 'Signed in', details: 'Successful login via password', timestamp: '26 Jul 2026, 08:02 AM', ip: '192.168.1.30' },
+  { id: 'log-12', type: 'User Management', user: 'Kritsada W. (IT Admin)', action: 'Reset password', details: 'Password reset requested for "Nurse Malee S."', timestamp: '25 Jul 2026, 11:20 AM', ip: '192.168.1.2' },
+  { id: 'log-13', type: 'Login', user: 'Kritsada W. (IT Admin)', action: 'Signed in', details: 'Successful login via password', timestamp: '25 Jul 2026, 08:01 AM', ip: '192.168.1.2' },
+  { id: 'log-14', type: 'Logout', user: 'Dr. Ariya K.', action: 'Signed out', details: 'Session ended by user', timestamp: '24 Jul 2026, 06:48 PM', ip: '203.0.113.42' },
+]
+
 const RESERVATIONS: Reservation[] = [
   {
     id: 'res-1',
@@ -4261,6 +4297,142 @@ function SupportPage() {
   )
 }
 
+// IT Staff only. Mock audit trail — no backing auth/logging system yet, see
+// IT_ACTIVITY_LOGS above.
+function ActivityLogsPage() {
+  const [typeTab, setTypeTab] = useState<'All' | ActivityLogType>('All')
+  const [search, setSearch] = useState('')
+  const [dateFilter, setDateFilter] = useState('')
+
+  const clearFilters = () => {
+    setTypeTab('All')
+    setSearch('')
+    setDateFilter('')
+  }
+
+  const counts: Record<'All' | ActivityLogType, number> = {
+    All: IT_ACTIVITY_LOGS.length,
+    'User Management': IT_ACTIVITY_LOGS.filter(l => l.type === 'User Management').length,
+    Login: IT_ACTIVITY_LOGS.filter(l => l.type === 'Login').length,
+    Logout: IT_ACTIVITY_LOGS.filter(l => l.type === 'Logout').length,
+  }
+
+  const visible = IT_ACTIVITY_LOGS.filter(l => {
+    if (typeTab !== 'All' && l.type !== typeTab) return false
+    if (!matchesLooseDate(l.timestamp, dateFilter)) return false
+    if (search) {
+      const q = search.toLowerCase()
+      const matches = l.user.toLowerCase().includes(q) || l.action.toLowerCase().includes(q) || l.details.toLowerCase().includes(q)
+      if (!matches) return false
+    }
+    return true
+  })
+
+  return (
+    <>
+      <header className="flex items-center justify-between px-6 py-3.5 bg-white border-b border-gray-100 shrink-0">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Activity Logs</h1>
+          <p className="text-[11px] text-gray-400">CRM System · Mon, 20 Jul 2026 · Visible to IT Staff only</p>
+        </div>
+        <div className="w-8 h-8 rounded-full bg-blue-600 text-white text-[11px] font-bold flex items-center justify-center select-none">IT</div>
+      </header>
+
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-5">
+            <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+              <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 w-fit">
+                {(['All', 'User Management', 'Login', 'Logout'] as const).map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setTypeTab(tab)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-[13px] font-semibold transition-colors whitespace-nowrap ${
+                      typeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    {tab}
+                    <span className={`min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center ${typeTab === tab ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-600'}`}>
+                      {counts[tab]}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <span className="text-[11px] text-gray-400 whitespace-nowrap">{visible.length} results</span>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div>
+                <label htmlFor="log-filter-search" className="text-[11px] font-semibold text-gray-500">User / Action</label>
+                <div className="relative mt-1">
+                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
+                  <input
+                    id="log-filter-search"
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder="Search user or action"
+                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="log-filter-date" className="text-[11px] font-semibold text-gray-500">Date</label>
+                <DateFilterInput id="log-filter-date" value={dateFilter} onChange={setDateFilter} />
+              </div>
+
+              <div className="flex items-end">
+                <button
+                  onClick={clearFilters}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-semibold text-orange-500 bg-orange-50 hover:bg-orange-100 transition-colors"
+                >
+                  <RefreshIcon className="w-3.5 h-3.5" /> Clear
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-100">
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5 whitespace-nowrap">Timestamp</th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">User</th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Type</th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Action</th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Details</th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5 whitespace-nowrap">IP Address</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map(log => (
+                  <tr key={log.id} className="border-b border-gray-50 hover:bg-gray-50/70 transition-colors">
+                    <td className="px-4 py-3.5 text-[13px] text-gray-700 whitespace-nowrap">{log.timestamp}</td>
+                    <td className="px-4 py-3.5 text-[13px] font-semibold text-gray-900 whitespace-nowrap">{log.user}</td>
+                    <td className="px-4 py-3.5">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${HUE[ACTIVITY_LOG_TYPE_HUE[log.type]].pill}`}>
+                        {log.type}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-[13px] text-gray-700 whitespace-nowrap">{log.action}</td>
+                    <td className="px-4 py-3.5 text-[13px] text-gray-500 max-w-[280px] truncate" title={log.details}>{log.details}</td>
+                    <td className="px-4 py-3.5 text-[12px] text-gray-400 font-mono whitespace-nowrap">{log.ip}</td>
+                  </tr>
+                ))}
+                {visible.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-10 text-center text-[13px] text-gray-400">No activity logs match these filters.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 const AVATAR_COLORS = ['#3b82f6', '#f97316', '#8b5cf6', '#10b981', '#06b6d4', '#ec4899', '#f59e0b', '#6366f1']
@@ -4275,7 +4447,8 @@ function initialsFor(name: string, patientId: string): string {
 export default function App() {
   const [contacts, setContacts] = useState<Contact[]>(INIT)
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [page, setPage] = useState<'Inbox' | 'Manual' | 'Reservations' | 'Documents' | 'Medicines' | 'Support'>('Inbox')
+  const [page, setPage] = useState<'Inbox' | 'Manual' | 'Reservations' | 'Documents' | 'Medicines' | 'Support' | 'Activity Logs'>('Inbox')
+  const [userRole, setUserRole] = useState<'Staff' | 'IT Staff'>('IT Staff')
   const [viewAs, setViewAs] = useState<ViewAs>('PFSD')
   const [paneContact, setPaneContact] = useState<Contact | null>(null)
   const [activityLogContact, setActivityLogContact] = useState<Contact | null>(null)
@@ -4509,7 +4682,59 @@ export default function App() {
               {sidebarOpen && item.label}
             </button>
           ))}
+          {userRole === 'IT Staff' && (
+            <>
+              {sidebarOpen ? (
+                <div className="pt-5 pb-1.5 px-3">
+                  <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">IT Staff</span>
+                </div>
+              ) : (
+                <div className="my-3 mx-3 border-t border-white/10" />
+              )}
+              {[
+                { label: 'Activity Logs', icon: <ActivityLogIcon className="w-[18px] h-[18px]" /> },
+              ].map(item => {
+                const isActive = item.label === page
+                return (
+                  <button
+                    key={item.label}
+                    title={!sidebarOpen ? item.label : undefined}
+                    onClick={() => {
+                      setPage('Activity Logs')
+                      setPaneContact(null)
+                      setActivityLogContact(null)
+                    }}
+                    className={`w-full flex items-center py-2 rounded-lg text-[13px] transition-colors whitespace-nowrap ${sidebarOpen ? 'gap-2.5 px-3' : 'justify-center px-0'} ${isActive ? 'bg-blue-600 text-white' : 'text-white/60 hover:bg-white/8 hover:text-white'}`}
+                  >
+                    <span className="shrink-0 flex items-center justify-center w-[18px] h-[18px]">{item.icon}</span>
+                    {sidebarOpen && item.label}
+                  </button>
+                )
+              })}
+            </>
+          )}
         </nav>
+
+        {/* Demo-only role switcher — simulates IT Staff vs regular Staff since
+            there's no real auth/permission system in this app yet. */}
+        <div className={`border-t border-white/10 py-3 ${sidebarOpen ? 'px-3' : 'px-2'}`}>
+          {sidebarOpen && <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-1.5">Demo role</p>}
+          <div className={`flex items-center gap-1 bg-white/5 rounded-lg p-1 ${sidebarOpen ? '' : 'flex-col'}`}>
+            {(['Staff', 'IT Staff'] as const).map(role => (
+              <button
+                key={role}
+                title={!sidebarOpen ? role : undefined}
+                onClick={() => {
+                  setUserRole(role)
+                  if (role === 'Staff' && page === 'Activity Logs') setPage('Inbox')
+                }}
+                className={`flex-1 w-full text-[11px] font-semibold py-1.5 rounded-md transition-colors whitespace-nowrap ${userRole === role ? 'bg-blue-600 text-white' : 'text-white/50 hover:text-white'}`}
+              >
+                {sidebarOpen ? role : role === 'IT Staff' ? 'IT' : 'ST'}
+              </button>
+            ))}
+          </div>
+        </div>
       </aside>
 
       {/* ── Main + Pane wrapper ───────────────────────────────────────────── */}
@@ -4519,6 +4744,8 @@ export default function App() {
         <main className="flex-1 flex flex-col overflow-hidden min-w-0">
         {page === 'Support' ? (
           <SupportPage />
+        ) : page === 'Activity Logs' ? (
+          userRole === 'IT Staff' ? <ActivityLogsPage /> : null
         ) : page === 'Medicines' ? (
           <MedicinesPage />
         ) : page === 'Documents' ? (
