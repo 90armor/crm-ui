@@ -2,8 +2,8 @@ import { useState, useMemo } from 'react'
 import { useFilteredList } from '@/hooks/useFilteredList'
 import { matchesLooseDate } from '@/lib/format'
 import { DateFilterInput } from '@/components/ui/DateFilterInput'
+import { ActivityLogTable } from '@/components/activity-logs/ActivityLogTable'
 import { SearchIcon, RefreshIcon } from '@/icons'
-import { HUE, ACTIVITY_LOG_TYPE_HUE } from '@/theme/hue'
 import { IT_ACTIVITY_LOGS } from '@/data/activity-logs'
 import type { ActivityLogType } from '@/types/domain'
 
@@ -30,11 +30,7 @@ export function ActivityLogsPage() {
   const visible = useFilteredList(IT_ACTIVITY_LOGS, l => {
     if (typeTab !== 'All' && l.type !== typeTab) return false
     if (!matchesLooseDate(l.timestamp, dateFilter)) return false
-    if (search) {
-      const q = search.toLowerCase()
-      const matches = l.user.toLowerCase().includes(q) || l.action.toLowerCase().includes(q) || l.details.toLowerCase().includes(q)
-      if (!matches) return false
-    }
+    if (search && !l.user.toLowerCase().includes(search.toLowerCase())) return false
     return true
   }, [typeTab, dateFilter, search])
 
@@ -73,14 +69,14 @@ export function ActivityLogsPage() {
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               <div>
-                <label htmlFor="log-filter-search" className="text-[11px] font-semibold text-gray-500">User / Action</label>
+                <label htmlFor="log-filter-search" className="text-[11px] font-semibold text-gray-500">User</label>
                 <div className="relative mt-1">
                   <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
                   <input
                     id="log-filter-search"
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    placeholder="Search user or action"
+                    placeholder="Search user"
                     className="w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
                   />
                 </div>
@@ -102,41 +98,7 @@ export function ActivityLogsPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-100">
-                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5 whitespace-nowrap">Timestamp</th>
-                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">User</th>
-                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Type</th>
-                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Action</th>
-                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Details</th>
-                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5 whitespace-nowrap">IP Address</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visible.map(log => (
-                  <tr key={log.id} className="border-b border-gray-50 hover:bg-gray-50/70 transition-colors">
-                    <td className="px-4 py-3.5 text-[13px] text-gray-700 whitespace-nowrap">{log.timestamp}</td>
-                    <td className="px-4 py-3.5 text-[13px] font-semibold text-gray-900 whitespace-nowrap">{log.user}</td>
-                    <td className="px-4 py-3.5">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${HUE[ACTIVITY_LOG_TYPE_HUE[log.type]].pill}`}>
-                        {log.type}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 text-[13px] text-gray-700 whitespace-nowrap">{log.action}</td>
-                    <td className="px-4 py-3.5 text-[13px] text-gray-500 max-w-[280px] truncate" title={log.details}>{log.details}</td>
-                    <td className="px-4 py-3.5 text-[12px] text-gray-400 font-mono whitespace-nowrap">{log.ip}</td>
-                  </tr>
-                ))}
-                {visible.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-[13px] text-gray-400">No activity logs match these filters.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <ActivityLogTable logs={visible} />
         </div>
       </div>
     </>
