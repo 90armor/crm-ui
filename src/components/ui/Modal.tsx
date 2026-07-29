@@ -25,17 +25,17 @@ export function Modal({
 }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className={`bg-white rounded-2xl shadow-2xl w-full ${MODAL_SIZE[size]} max-h-[88vh] flex flex-col`}>
-        <div className="flex items-start justify-between px-6 py-5 border-b border-gray-100 shrink-0">
+      <div className={`bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full ${MODAL_SIZE[size]} max-h-[88vh] flex flex-col`}>
+        <div className="flex items-start justify-between px-6 py-5 border-b border-gray-100 dark:border-gray-800 shrink-0">
           <div>
-            <h2 className="text-[15px] font-semibold text-gray-900">{title}</h2>
-            {subtitle && <p className="text-[12px] text-gray-400 mt-0.5">{subtitle}</p>}
+            <h2 className="text-[15px] font-semibold text-gray-900 dark:text-gray-100">{title}</h2>
+            {subtitle && <p className="text-[12px] text-gray-400 dark:text-gray-500 mt-0.5">{subtitle}</p>}
           </div>
-          <button onClick={onClose} className="text-gray-300 hover:text-gray-600 text-2xl leading-none shrink-0 ml-2">×</button>
+          <button onClick={onClose} className="text-gray-300 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-300 text-2xl leading-none shrink-0 ml-2">×</button>
         </div>
         <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 shrink-0">{footer}</div>
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-gray-800 shrink-0">{footer}</div>
         )}
       </div>
     </div>

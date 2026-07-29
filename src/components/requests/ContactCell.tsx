@@ -27,26 +27,26 @@ export function ContactCell({
       <Avatar initials={contact.initials} color={contact.color} />
       <div>
         <div className="flex items-center gap-1.5">
-          <span className="text-[13px] font-semibold text-gray-900">{contact.name}</span>
+          <span className="text-[13px] font-semibold text-gray-900 dark:text-gray-100">{contact.name}</span>
           <SourceIcon source={contact.source} className="w-3.5 h-3.5 shrink-0" />
           {badge}
         </div>
         {patientId && (
-          <p className="text-[11px] text-gray-400 mt-0.5">
-            PID/Ph: <span className="text-blue-500 font-medium">{patientId}</span>
+          <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+            PID/Ph: <span className="text-blue-500 dark:text-blue-400 font-medium">{patientId}</span>
           </p>
         )}
-        <p className="text-[11px] text-gray-400 mt-0.5">
-          Created: <span className="text-blue-500 font-medium">{createdDate}</span>
+        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+          Created: <span className="text-blue-500 dark:text-blue-400 font-medium">{createdDate}</span>
         </p>
         <div className="flex items-center gap-2.5 mt-1" onClick={e => e.stopPropagation()}>
-          <button onClick={onMessage} title="Message" className="text-blue-500 hover:text-blue-700 transition-colors">
+          <button onClick={onMessage} title="Message" className="text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
             <ChatBubbleIcon className="w-4 h-4" />
           </button>
-          <span className="text-emerald-500">
+          <span className="text-emerald-500 dark:text-emerald-400">
             <PhoneIcon className="w-4 h-4" />
           </span>
-          <button onClick={onActivityLog} title="Activity Log" className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button onClick={onActivityLog} title="Activity Log" className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
             <ActivityLogIcon className="w-4 h-4" />
           </button>
         </div>

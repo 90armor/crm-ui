@@ -170,7 +170,7 @@ function AssignModal({
     >
       <div className="space-y-3">
         {chain.length === 0 && (
-            <p className="text-[13px] text-gray-400 italic text-center py-8">No departments yet. Add one below.</p>
+            <p className="text-[13px] text-gray-400 dark:text-gray-500 italic text-center py-8">No departments yet. Add one below.</p>
           )}
 
           {chain.map((entry, i) => {
@@ -190,30 +190,30 @@ function AssignModal({
                 onDragOver={e => isDraggable && handleDragOver(e, i)}
                 onDrop={handleDrop}
                 className={`rounded-xl border p-4 space-y-3 transition-all ${
-                  entry.entryStatus === 'active'         ? 'border-blue-300 bg-blue-50/40' :
-                  entry.entryStatus === 'waitingPatient' ? 'border-purple-300 bg-purple-50/40' :
-                  entry.entryStatus === 'completed'      ? 'border-gray-200 bg-gray-50/60 opacity-70' :
-                  entry.entryStatus === 'returned'       ? 'border-red-200 bg-red-50/40' :
+                  entry.entryStatus === 'active'         ? 'border-blue-300 dark:border-blue-800 bg-blue-50/40 dark:bg-blue-900/20' :
+                  entry.entryStatus === 'waitingPatient' ? 'border-purple-300 dark:border-purple-800 bg-purple-50/40 dark:bg-purple-900/20' :
+                  entry.entryStatus === 'completed'      ? 'border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/40 opacity-70' :
+                  entry.entryStatus === 'returned'       ? 'border-red-200 dark:border-red-800 bg-red-50/40 dark:bg-red-900/20' :
                   // Pending (next up, Start not yet clicked) gets the same amber accent
                   // as its badge/dot elsewhere — it deserves the same visual weight as
                   // active/waiting/returned. Queued (not yet reached) stays neutral.
-                  entry.entryStatus === 'pending'        ? 'border-amber-300 bg-amber-50/40' :
-                  'border-gray-200 bg-white'
+                  entry.entryStatus === 'pending'        ? 'border-amber-300 dark:border-amber-800 bg-amber-50/40 dark:bg-amber-900/20' :
+                  'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
                 } ${isDraggable ? 'cursor-grab active:cursor-grabbing' : ''}`}
               >
                 <div className="flex items-center gap-2">
                   {isDraggable && (
-                    <span className="text-gray-300 text-[13px] select-none">⠿</span>
+                    <span className="text-gray-300 dark:text-gray-600 text-[13px] select-none">⠿</span>
                   )}
-                  <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-[11px] flex items-center justify-center font-bold shrink-0">{i + 1}</span>
-                  <span className="text-[13px] font-semibold text-gray-900">{entry.dept}</span>
+                  <span className="w-5 h-5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-[11px] flex items-center justify-center font-bold shrink-0">{i + 1}</span>
+                  <span className="text-[13px] font-semibold text-gray-900 dark:text-gray-100">{entry.dept}</span>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full border font-semibold ${ENTRY_BADGE[entry.entryStatus]}`}>
                     {ENTRY_STATUS_LABEL[entry.entryStatus]}
                   </span>
                   {isLocked
-                    ? <span className="ml-auto text-[11px] text-gray-400">Read-only</span>
+                    ? <span className="ml-auto text-[11px] text-gray-400 dark:text-gray-500">Read-only</span>
                     : (
-                      <button onClick={() => removeDept(i)} className="ml-auto text-gray-300 hover:text-red-400 text-[13px] font-bold">✕</button>
+                      <button onClick={() => removeDept(i)} className="ml-auto text-gray-300 dark:text-gray-600 hover:text-red-400 text-[13px] font-bold">✕</button>
                     )
                   }
                 </div>
@@ -222,12 +222,12 @@ function AssignModal({
                     edit; any other editable entry keeps the textarea open directly. */}
                 <div>
                   <div className="flex items-center justify-between gap-2">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">PFSD note to {entry.dept} <span className="normal-case font-medium text-gray-300">(optional)</span></label>
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">PFSD note to {entry.dept} <span className="normal-case font-medium text-gray-300 dark:text-gray-600">(optional)</span></label>
                     {isFreshEditable && (
                       <button
                         onClick={() => toggleEditComment(i)}
                         title={isEditingNote ? 'Done editing' : 'Edit note'}
-                        className="text-gray-300 hover:text-blue-500 transition-colors shrink-0"
+                        className="text-gray-300 dark:text-gray-600 hover:text-blue-500 transition-colors shrink-0"
                       >
                         <PencilIcon className="w-3.5 h-3.5" />
                       </button>
@@ -243,11 +243,11 @@ function AssignModal({
                       onChange={e => updateComment(i, e.target.value)}
                       rows={2}
                       placeholder={`Instructions for ${entry.dept}… (optional)`}
-                      className="mt-1 w-full text-[13px] border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                      className="mt-1 w-full text-[13px] border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
                     />
                   ) : (
-                    <p className="mt-1 text-[13px] text-gray-700 bg-white border border-gray-100 rounded-lg px-3 py-2 min-h-[38px]">
-                      {entry.comment || <span className="text-gray-300 italic">No note</span>}
+                    <p className="mt-1 text-[13px] text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-lg px-3 py-2 min-h-[38px]">
+                      {entry.comment || <span className="text-gray-300 dark:text-gray-600 italic">No note</span>}
                     </p>
                   )}
                 </div>
@@ -255,8 +255,8 @@ function AssignModal({
                 {/* Return note from dept (read-only, info only) */}
                 {entry.returnComment && (
                   <div>
-                    <label className="text-[10px] font-bold text-red-400 uppercase tracking-wider">↩ Return note from {entry.dept}</label>
-                    <p className="mt-1 text-[12px] text-red-700 bg-red-50 border border-red-100 rounded-lg px-3 py-1.5">{entry.returnComment}</p>
+                    <label className="text-[10px] font-bold text-red-400 dark:text-red-500 uppercase tracking-wider">↩ Return note from {entry.dept}</label>
+                    <p className="mt-1 text-[12px] text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-lg px-3 py-1.5">{entry.returnComment}</p>
                   </div>
                 )}
 
@@ -264,8 +264,8 @@ function AssignModal({
                     style as the selected choice below, so the two states read as one control */}
                 {entry.dept === 'Pharmacy' && (
                   <div>
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                      Pharmacy inquiry type <span className="text-red-400 normal-case font-medium">(required)</span>
+                    <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                      Pharmacy inquiry type <span className="text-red-400 dark:text-red-500 normal-case font-medium">(required)</span>
                     </label>
                     {showNoteEditor ? (
                       <>
@@ -278,7 +278,7 @@ function AssignModal({
                               className={`px-3 py-1 rounded-full text-[12px] font-semibold border transition-colors ${
                                 entry.pharmacyType === t
                                   ? 'bg-violet-600 text-white border-violet-600'
-                                  : 'bg-white text-gray-500 border-gray-200 hover:border-violet-300 hover:text-violet-600'
+                                  : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-violet-300 hover:text-violet-600'
                               } ${isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                             >
                               {t}
@@ -286,7 +286,7 @@ function AssignModal({
                           ))}
                         </div>
                         {!entry.pharmacyType && (
-                          <p className="mt-1.5 text-[11px] text-red-500">Select an inquiry type before assigning this entry.</p>
+                          <p className="mt-1.5 text-[11px] text-red-500 dark:text-red-400">Select an inquiry type before assigning this entry.</p>
                         )}
                       </>
                     ) : (
@@ -296,9 +296,9 @@ function AssignModal({
                             {entry.pharmacyType}
                           </span>
                         ) : isLocked ? (
-                          <span className="text-[12px] text-gray-300 italic">Not set</span>
+                          <span className="text-[12px] text-gray-300 dark:text-gray-600 italic">Not set</span>
                         ) : (
-                          <span className="text-[12px] text-red-500 italic">Not set — click ✎ above to choose one</span>
+                          <span className="text-[12px] text-red-500 dark:text-red-400 italic">Not set — click ✎ above to choose one</span>
                         )}
                       </div>
                     )}
@@ -311,13 +311,13 @@ function AssignModal({
           {/* Add dept */}
           {available.length > 0 && (
             <div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Add to chain</p>
+              <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Add to chain</p>
               <div className="flex flex-wrap gap-2">
                 {available.map(d => (
                   <button
                     key={d}
                     onClick={() => addDept(d)}
-                    className="px-3 py-1.5 rounded-lg text-[12px] font-medium border border-dashed border-gray-300 text-gray-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                    className="px-3 py-1.5 rounded-lg text-[12px] font-medium border border-dashed border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                   >
                     + {d}
                   </button>

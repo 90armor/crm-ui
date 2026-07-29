@@ -86,31 +86,31 @@ function DetailPanel({
   return (
     <>
     <div className="fixed inset-0 z-50 bg-black/40 flex justify-end" onClick={onClose}>
-    <div className="w-[440px] max-w-full bg-white flex flex-col h-full shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+    <div className="w-[440px] max-w-full bg-white dark:bg-gray-900 flex flex-col h-full shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
       {/* Pane header */}
-      <div className="flex items-start justify-between px-6 py-5 border-b border-gray-100">
+      <div className="flex items-start justify-between px-6 py-5 border-b border-gray-100 dark:border-gray-800">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
             <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wider">Viewing</p>
           </div>
-          <p className="text-[14px] font-semibold text-gray-900 mt-0.5 truncate">{contact.name}</p>
-          <p className="text-[11px] text-gray-400 mt-0.5">{contact.source}{contact.hnNumber ? ` · ${contact.hnNumber}` : ''} · {contact.lastActive}</p>
+          <p className="text-[14px] font-semibold text-gray-900 dark:text-gray-100 mt-0.5 truncate">{contact.name}</p>
+          <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{contact.source}{contact.hnNumber ? ` · ${contact.hnNumber}` : ''} · {contact.lastActive}</p>
         </div>
-        <button onClick={onClose} className="text-gray-300 hover:text-gray-500 text-xl leading-none shrink-0 ml-2">×</button>
+        <button onClick={onClose} className="text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-300 text-xl leading-none shrink-0 ml-2">×</button>
       </div>
 
       {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto">
         {/* Return details */}
         {returnedEntry && (
-          <div className="mx-4 mt-4 rounded-xl border border-red-200 bg-red-50 p-3 space-y-2">
+          <div className="mx-4 mt-4 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-[12px] font-bold text-red-700 uppercase tracking-wide">Return Details</p>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200 font-semibold">Returned</span>
+              <p className="text-[12px] font-bold text-red-700 dark:text-red-300 uppercase tracking-wide">Return Details</p>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 font-semibold">Returned</span>
             </div>
-            <p className="text-[12px] font-semibold text-gray-800">{returnedEntry.dept}</p>
-            <p className="text-[12px] text-gray-600 leading-relaxed">{returnedEntry.returnComment}</p>
+            <p className="text-[12px] font-semibold text-gray-800 dark:text-gray-300">{returnedEntry.dept}</p>
+            <p className="text-[12px] text-gray-600 dark:text-gray-300 leading-relaxed">{returnedEntry.returnComment}</p>
             <div className="flex items-center gap-2 mt-1">
               <button
                 onClick={() => onMarkComplete(contact)}
@@ -120,7 +120,7 @@ function DetailPanel({
               </button>
               <button
                 onClick={onOpenReassign}
-                className="flex-1 py-1.5 rounded-lg bg-white text-red-700 border border-red-300 text-[12px] font-semibold hover:bg-red-100 transition-colors"
+                className="flex-1 py-1.5 rounded-lg bg-white dark:bg-gray-900 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-800 text-[12px] font-semibold hover:bg-red-100 transition-colors"
               >
                 Reassign
               </button>
@@ -130,7 +130,7 @@ function DetailPanel({
 
         {/* Department breakdown — destination-dot timeline, in handoff order */}
         <div className="px-4 pt-4">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Department Breakdown</p>
+          <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Department Breakdown</p>
           <div>
             {steps.map((step, idx) => {
               const isLast = idx === steps.length - 1
@@ -160,7 +160,7 @@ function DetailPanel({
               return (
                 <div key={step.key} className="relative flex gap-3">
                   {!isLast && (
-                    <span className={`absolute left-[9px] top-5 bottom-0 w-0.5 ${step.status === 'completed' ? 'bg-emerald-400' : 'bg-gray-200'}`} />
+                    <span className={`absolute left-[9px] top-5 bottom-0 w-0.5 ${step.status === 'completed' ? 'bg-emerald-400' : 'bg-gray-200 dark:bg-gray-700'}`} />
                   )}
                   <StepDot status={step.status} isCurrent={isCurrent} isOrigin={isOrigin} />
                   <div className={`flex-1 min-w-0 ${isLast ? 'pb-0.5' : 'pb-5'}`}>
@@ -172,7 +172,7 @@ function DetailPanel({
                         {/* Marks this row as the admin/origin step, not a real department,
                             since it's the only one PFSD staff might mistake for one. */}
                         {isOrigin && (
-                          <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-gray-400 bg-gray-100 px-1.5 py-px rounded">
+                          <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-1.5 py-px rounded">
                             Admin
                           </span>
                         )}
@@ -186,7 +186,7 @@ function DetailPanel({
                             onClick={() => setOpenNoteKey(k => k === commentKey ? null : commentKey)}
                             title={isCommentOpen ? 'Hide PFSD note' : 'View PFSD note'}
                             className={`flex items-center justify-center w-5 h-5 rounded-md shrink-0 transition-colors ${
-                              isCommentOpen ? 'text-blue-600 bg-blue-50' : 'text-gray-300 hover:text-blue-500 hover:bg-blue-50'
+                              isCommentOpen ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20' : 'text-gray-300 dark:text-gray-600 hover:text-blue-500 hover:bg-blue-50'
                             }`}
                           >
                             <NoteIcon className="w-3.5 h-3.5" />
@@ -196,12 +196,12 @@ function DetailPanel({
                       {isCommentOpen && (
                         <>
                           <div className="fixed inset-0 z-40" onClick={() => setOpenNoteKey(null)} />
-                          <div className="absolute left-0 top-full mt-1.5 z-50 w-56 max-w-full bg-white border border-gray-100 rounded-2xl shadow-2xl p-3">
+                          <div className="absolute left-0 top-full mt-1.5 z-50 w-56 max-w-full bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-2xl p-3">
                             <div className="flex items-center gap-1.5 mb-1.5">
-                              <NoteIcon className="w-3 h-3 text-gray-400" />
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">PFSD Note</p>
+                              <NoteIcon className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                              <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">PFSD Note</p>
                             </div>
-                            <p className="text-[12px] text-gray-600 leading-relaxed whitespace-pre-wrap break-words max-h-40 overflow-y-auto">
+                            <p className="text-[12px] text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap break-words max-h-40 overflow-y-auto">
                               {comment}
                             </p>
                           </div>
@@ -217,7 +217,7 @@ function DetailPanel({
                           </span>
                         )}
                         {step.status === 'queued' && !showCurrentBadge && (
-                          <span className="inline-flex items-center text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 bg-gray-100 text-gray-400">
+                          <span className="inline-flex items-center text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500">
                             Queued
                           </span>
                         )}
@@ -230,7 +230,7 @@ function DetailPanel({
                           disabled={!removable}
                           title={removable ? `Remove ${step.label}` : `${step.label} can't be removed`}
                           className={`flex items-center justify-center shrink-0 transition-colors ${
-                            removable ? 'text-red-400 hover:text-red-600 cursor-pointer' : 'text-gray-300 opacity-40 cursor-not-allowed'
+                            removable ? 'text-red-400 hover:text-red-600 cursor-pointer' : 'text-gray-300 dark:text-gray-600 opacity-40 cursor-not-allowed'
                           }`}
                         >
                           <MinusCircleIcon className="w-3.5 h-3.5" />
@@ -240,14 +240,14 @@ function DetailPanel({
                     </div>
                     {/* Pharmacy inquiry type, shown under the dept name — same pattern as the Telegram/Facebook source tag in the contact list */}
                     {step.pharmacyType && (
-                      <span className={`inline-block mt-0.5 text-[11px] px-1.5 py-px rounded font-medium ${step.pharmacyType === 'Question' ? 'bg-violet-100 text-violet-700' : 'bg-teal-100 text-teal-700'}`}>
+                      <span className={`inline-block mt-0.5 text-[11px] px-1.5 py-px rounded font-medium ${step.pharmacyType === 'Question' ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' : 'bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300'}`}>
                         {step.pharmacyType}
                       </span>
                     )}
                     {/* Empty-state hint — PFSD is the only row and nothing's been routed yet.
                         Not shown once closed: an empty chain there means "already handled," not "not yet." */}
                     {step.key === 'pfsd' && contact.chain.length === 0 && contact.status !== 'Closed' && (
-                      <p className="mt-0.5 text-[11px] text-gray-400">Not yet assigned to a department</p>
+                      <p className="mt-0.5 text-[11px] text-gray-400 dark:text-gray-500">Not yet assigned to a department</p>
                     )}
                   </div>
                 </div>
@@ -257,16 +257,16 @@ function DetailPanel({
         </div>
 
         {/* Activity log — visually separated from the breakdown above with a divider + tinted panel */}
-        <div className="mt-4 border-t border-gray-100 bg-gray-50/50 px-4 pt-4 pb-4">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2.5">Activity Log</p>
+        <div className="mt-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/40 px-4 pt-4 pb-4">
+          <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2.5">Activity Log</p>
           {contact.activityLog.length === 0 ? (
-            <p className="text-[12px] text-gray-300 italic">No activity yet</p>
+            <p className="text-[12px] text-gray-300 dark:text-gray-600 italic">No activity yet</p>
           ) : (
             <div className="space-y-1.5">
               {visibleActivityLog.map((log, i) => (
                 <div key={i} className="flex gap-2 items-start">
                   <span className={`w-1 h-1 rounded-full shrink-0 mt-[6px] ${activityLogTone(log)}`} />
-                  <p className="text-[12px] text-gray-500 leading-relaxed">{log}</p>
+                  <p className="text-[12px] text-gray-500 dark:text-gray-400 leading-relaxed">{log}</p>
                 </div>
               ))}
             </div>
@@ -283,7 +283,7 @@ function DetailPanel({
       </div>
 
       {/* Bottom actions */}
-      <div className="border-t border-gray-100 px-4 py-3 flex items-center gap-2">
+      <div className="border-t border-gray-100 dark:border-gray-800 px-4 py-3 flex items-center gap-2">
         <button
           onClick={onOpenAssign}
           className="flex-1 py-2 rounded-xl bg-blue-600 text-white text-[12px] font-semibold hover:bg-blue-700 transition-colors text-center"

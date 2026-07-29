@@ -4,7 +4,7 @@ const VARIANT: Record<Variant, string> = {
   primary: 'bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-blue-600',
   danger: 'bg-red-600 text-white hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-600',
   dark: 'bg-gray-900 text-white hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-gray-900',
-  secondary: 'text-gray-500 hover:text-gray-800',
+  secondary: 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200',
 }
 
 export function Button({

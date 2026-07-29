@@ -25,13 +25,13 @@ export function ReturnModal({
       }
     >
       <div className="space-y-3">
-        <p className="text-[13px] text-gray-600">Describe why you are returning this case. PFSD admin will see this note.</p>
+        <p className="text-[13px] text-gray-600 dark:text-gray-300">Describe why you are returning this case. PFSD admin will see this note.</p>
         <textarea
           value={note}
           onChange={e => setNote(e.target.value)}
           rows={4}
           placeholder="Reason for returning…"
-          className="w-full text-[13px] border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-red-400 resize-none"
+          className="w-full text-[13px] border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-red-400 resize-none"
         />
       </div>
     </Modal>

@@ -18,7 +18,7 @@ export function ConfirmModal({
         </>
       }
     >
-      <p className="text-[13px] text-gray-600 leading-relaxed">{message}</p>
+      <p className="text-[13px] text-gray-600 dark:text-gray-300 leading-relaxed">{message}</p>
     </Modal>
   )
 }

@@ -46,5 +46,5 @@ export function StepDot({ status, isCurrent, isOrigin }: { status: ChainEntrySta
     )
   }
   // 'queued' — not yet reached, hollow marker
-  return <span className="relative z-10 w-5 h-5 rounded-full bg-white border-2 border-gray-300 shrink-0" />
+  return <span className="relative z-10 w-5 h-5 rounded-full bg-white dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 shrink-0" />
 }

@@ -114,10 +114,10 @@ export function ManualPage({
 
   return (
     <>
-      <header className="flex items-center justify-between px-6 py-3.5 bg-white border-b border-gray-100 shrink-0">
+      <header className="flex items-center justify-between px-6 py-3.5 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 shrink-0">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Manual</h1>
-          <p className="text-[11px] text-gray-400">CRM System · Mon, 20 Jul 2026</p>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Manual</h1>
+          <p className="text-[11px] text-gray-400 dark:text-gray-500">CRM System · Mon, 20 Jul 2026</p>
         </div>
         <div className="flex items-center gap-2.5">
           <button
@@ -132,9 +132,9 @@ export function ManualPage({
 
       <div className="flex-1 overflow-y-auto p-6">
         {toast && (
-          <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5">
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 px-3.5 py-2.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-            <p className="text-[12px] font-medium text-emerald-700">{toast}</p>
+            <p className="text-[12px] font-medium text-emerald-700 dark:text-emerald-300">{toast}</p>
           </div>
         )}
 
@@ -179,88 +179,88 @@ export function ManualPage({
         </div>
 
         {/* Manual Inquiries card — filters and the data table share one card */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-5">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden mb-5">
           <div className="p-5">
             <div className="flex items-center gap-2 mb-1">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-              <p className="text-[11px] font-bold text-blue-600 uppercase tracking-wider">Manual Inquiries</p>
+              <p className="text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Manual Inquiries</p>
             </div>
-            <p className="text-[13px] text-gray-400 mb-4">Manual inquiries registered by phone, in the same workflow as Telegram/Facebook.</p>
+            <p className="text-[13px] text-gray-400 dark:text-gray-500 mb-4">Manual inquiries registered by phone, in the same workflow as Telegram/Facebook.</p>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
               <div>
-                <label htmlFor="manual-filter-contact-name" className="text-[11px] font-semibold text-gray-500">Contact Name</label>
+                <label htmlFor="manual-filter-contact-name" className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Contact Name</label>
                 <div className="relative mt-1">
-                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
+                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 dark:text-gray-600 pointer-events-none" />
                   <input
                     id="manual-filter-contact-name"
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder="Search contact name"
-                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                    className="w-full text-[13px] border border-gray-200 dark:border-gray-700 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-800 dark:text-gray-100"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="manual-filter-status" className="text-[11px] font-semibold text-gray-500">Status</label>
+                <label htmlFor="manual-filter-status" className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Status</label>
                 <div className="relative mt-1">
                   <select
                     id="manual-filter-status"
                     value={statusFilter}
                     onChange={e => setStatusFilter(e.target.value as 'All' | Status)}
-                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                    className="w-full text-[13px] border border-gray-200 dark:border-gray-700 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-800 dark:text-gray-100 appearance-none"
                   >
                     <option value="All">All</option>
                     <option value="Open">Open</option>
                     <option value="Pending">Pending</option>
                     <option value="Closed">Closed</option>
                   </select>
-                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="manual-filter-first-contact-date" className="text-[11px] font-semibold text-gray-500">First Contact Date</label>
+                <label htmlFor="manual-filter-first-contact-date" className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">First Contact Date</label>
                 <DateFilterInput id="manual-filter-first-contact-date" value={firstContactDateFilter} onChange={setFirstContactDateFilter} />
               </div>
 
               <div>
-                <label htmlFor="manual-filter-assignee" className="text-[11px] font-semibold text-gray-500">Assignee</label>
+                <label htmlFor="manual-filter-assignee" className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Assignee</label>
                 <div className="relative mt-1">
                   <select
                     id="manual-filter-assignee"
                     value={assigneeFilter}
                     onChange={e => setAssigneeFilter(e.target.value as 'All' | 'Unassigned' | Dept)}
-                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                    className="w-full text-[13px] border border-gray-200 dark:border-gray-700 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-800 dark:text-gray-100 appearance-none"
                   >
                     <option value="All">All</option>
                     <option value="Unassigned">Unassigned</option>
                     {ALL_DEPTS.map(d => <option key={d} value={d}>{d}</option>)}
                   </select>
-                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="manual-filter-priority" className="text-[11px] font-semibold text-gray-500">Priority</label>
+                <label htmlFor="manual-filter-priority" className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Priority</label>
                 <div className="relative mt-1">
                   <select
                     id="manual-filter-priority"
                     value={priorityFilter}
                     onChange={e => setPriorityFilter(e.target.value as 'All' | Priority)}
-                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                    className="w-full text-[13px] border border-gray-200 dark:border-gray-700 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-800 dark:text-gray-100 appearance-none"
                   >
                     <option value="All">All</option>
                     <option value="Normal">Normal</option>
                     <option value="Prio">Prio</option>
                   </select>
-                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="manual-filter-last-active-date" className="text-[11px] font-semibold text-gray-500">Last Active Date</label>
+                <label htmlFor="manual-filter-last-active-date" className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Last Active Date</label>
                 <DateFilterInput id="manual-filter-last-active-date" value={lastActiveDateFilter} onChange={setLastActiveDateFilter} />
               </div>
             </div>
@@ -268,11 +268,11 @@ export function ManualPage({
             <div className="flex items-center justify-between flex-wrap gap-3">
               <button
                 onClick={clearFilters}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-orange-500 bg-orange-50 hover:bg-orange-100 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-orange-500 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/40 hover:bg-orange-100 dark:hover:bg-orange-950/60 transition-colors"
               >
                 <RefreshIcon className="w-3.5 h-3.5" /> Clear
               </button>
-              <span className="text-[11px] text-gray-400 whitespace-nowrap">{visible.length} results</span>
+              <span className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap">{visible.length} results</span>
             </div>
           </div>
 

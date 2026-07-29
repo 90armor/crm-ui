@@ -68,10 +68,10 @@ export function ReservationsPage() {
 
   return (
     <>
-      <header className="flex items-center justify-between px-6 py-3.5 bg-white border-b border-gray-100 shrink-0">
+      <header className="flex items-center justify-between px-6 py-3.5 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 shrink-0">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Reservations</h1>
-          <p className="text-[11px] text-gray-400">CRM System · Mon, 20 Jul 2026</p>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Reservations</h1>
+          <p className="text-[11px] text-gray-400 dark:text-gray-500">CRM System · Mon, 20 Jul 2026</p>
         </div>
         <div className="w-8 h-8 rounded-full bg-blue-600 text-white text-[11px] font-bold flex items-center justify-center select-none">AP</div>
       </header>
@@ -80,98 +80,98 @@ export function ReservationsPage() {
         <RequestStatusOverview title="Reservation Status Overview" counts={counts} />
 
         {/* Filters + table card */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
           <div className="p-5">
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
               <div>
-                <label htmlFor="res-filter-search" className="text-[11px] font-semibold text-gray-500">Patient ID / Phone</label>
+                <label htmlFor="res-filter-search" className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Patient ID / Phone</label>
                 <div className="relative mt-1">
-                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none" />
+                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 dark:text-gray-600 pointer-events-none" />
                   <input
                     id="res-filter-search"
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder="Search ID / Phone"
-                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+                    className="w-full text-[13px] border border-gray-200 dark:border-gray-700 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-800 dark:text-gray-100"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="res-filter-status" className="text-[11px] font-semibold text-gray-500">Status</label>
+                <label htmlFor="res-filter-status" className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Status</label>
                 <div className="relative mt-1">
                   <select
                     id="res-filter-status"
                     value={statusFilter}
                     onChange={e => setStatusFilter(e.target.value as 'All' | RequestStatus)}
-                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                    className="w-full text-[13px] border border-gray-200 dark:border-gray-700 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-800 dark:text-gray-100 appearance-none"
                   >
                     <option value="All">All</option>
                     <option value="Open">Open</option>
                     <option value="Pending">Pending</option>
                     <option value="Resolved">Resolved</option>
                   </select>
-                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="res-filter-hospital" className="text-[11px] font-semibold text-gray-500">Hospital</label>
+                <label htmlFor="res-filter-hospital" className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Hospital</label>
                 <div className="relative mt-1">
                   <select
                     id="res-filter-hospital"
                     value={hospitalFilter}
                     onChange={e => setHospitalFilter(e.target.value)}
-                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                    className="w-full text-[13px] border border-gray-200 dark:border-gray-700 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-800 dark:text-gray-100 appearance-none"
                   >
                     <option value="All">All</option>
                     {HOSPITALS.map(h => <option key={h} value={h}>{h}</option>)}
                   </select>
-                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="res-filter-visitor-type" className="text-[11px] font-semibold text-gray-500">Visitor Type</label>
+                <label htmlFor="res-filter-visitor-type" className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Visitor Type</label>
                 <div className="relative mt-1">
                   <select
                     id="res-filter-visitor-type"
                     value={visitorTypeFilter}
                     onChange={e => setVisitorTypeFilter(e.target.value as 'All' | VisitorType)}
-                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                    className="w-full text-[13px] border border-gray-200 dark:border-gray-700 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-800 dark:text-gray-100 appearance-none"
                   >
                     <option value="All">All</option>
                     <option value="First Visit">First Visit</option>
                     <option value="Follow-up">Follow-up</option>
                   </select>
-                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="res-filter-assignee" className="text-[11px] font-semibold text-gray-500">Assignee</label>
+                <label htmlFor="res-filter-assignee" className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Assignee</label>
                 <div className="relative mt-1">
                   <select
                     id="res-filter-assignee"
                     value={assigneeFilter}
                     onChange={e => setAssigneeFilter(e.target.value)}
-                    className="w-full text-[13px] border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white appearance-none"
+                    className="w-full text-[13px] border border-gray-200 dark:border-gray-700 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-800 dark:text-gray-100 appearance-none"
                   >
                     <option value="All">All</option>
                     <option value="Unassigned">Unassigned</option>
                     {STAFF_MEMBERS.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
-                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                  <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 dark:text-gray-500 pointer-events-none" />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="res-filter-preferred-date" className="text-[11px] font-semibold text-gray-500">Preferred Date</label>
+                <label htmlFor="res-filter-preferred-date" className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Preferred Date</label>
                 <DateFilterInput id="res-filter-preferred-date" value={preferredDateFilter} onChange={setPreferredDateFilter} />
               </div>
 
               <div>
-                <label htmlFor="res-filter-created-date" className="text-[11px] font-semibold text-gray-500">Created Date</label>
+                <label htmlFor="res-filter-created-date" className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Created Date</label>
                 <DateFilterInput id="res-filter-created-date" value={createdDateFilter} onChange={setCreatedDateFilter} />
               </div>
             </div>
@@ -179,32 +179,32 @@ export function ReservationsPage() {
             <div className="flex items-center justify-between flex-wrap gap-3">
               <button
                 onClick={clearFilters}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-orange-500 bg-orange-50 hover:bg-orange-100 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-orange-500 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/40 hover:bg-orange-100 dark:hover:bg-orange-950/60 transition-colors"
               >
                 <RefreshIcon className="w-3.5 h-3.5" /> Clear
               </button>
-              <span className="text-[11px] text-gray-400 whitespace-nowrap">{visible.length} results</span>
+              <span className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap">{visible.length} results</span>
             </div>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-100">
-                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Contact</th>
-                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">
+                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
+                  <th className="text-left text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide px-4 py-3.5">Contact</th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide px-4 py-3.5">
                     <span className="inline-flex items-center gap-1" title="Current reservation status">
-                      Status <HelpCircleIcon className="w-3 h-3 text-gray-300" />
+                      Status <HelpCircleIcon className="w-3 h-3 text-gray-300 dark:text-gray-600" />
                     </span>
                   </th>
-                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">
+                  <th className="text-left text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide px-4 py-3.5">
                     <span className="inline-flex items-center gap-1" title="Staff member handling this reservation">
-                      Assignee <HelpCircleIcon className="w-3 h-3 text-gray-300" />
+                      Assignee <HelpCircleIcon className="w-3 h-3 text-gray-300 dark:text-gray-600" />
                     </span>
                   </th>
-                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5 whitespace-nowrap">Appointment Type</th>
-                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Schedule</th>
-                  <th className="text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide px-4 py-3.5">Doctor</th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide px-4 py-3.5 whitespace-nowrap">Appointment Type</th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide px-4 py-3.5">Schedule</th>
+                  <th className="text-left text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide px-4 py-3.5">Doctor</th>
                 </tr>
               </thead>
               <tbody>
@@ -212,14 +212,14 @@ export function ReservationsPage() {
                   <tr
                     key={r.id}
                     onClick={() => setDetailFor(r)}
-                    className="border-b border-gray-50 hover:bg-gray-50/70 transition-colors cursor-pointer"
+                    className="border-b border-gray-50 dark:border-gray-800/60 hover:bg-gray-50/70 dark:hover:bg-gray-800/40 transition-colors cursor-pointer"
                   >
                     <td className="px-4 py-3.5">
                       <ContactCell
                         contact={r.contact}
                         createdDate={r.createdDate}
                         badge={
-                          <span className="text-[10px] px-1.5 py-px rounded-full font-bold bg-emerald-100 text-emerald-700 leading-none">
+                          <span className="text-[10px] px-1.5 py-px rounded-full font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 leading-none">
                             {r.visitorType}
                           </span>
                         }
@@ -250,21 +250,21 @@ export function ReservationsPage() {
                       />
                     </td>
 
-                    <td className="px-4 py-3.5 text-[13px] text-gray-700">{r.appointmentType}</td>
+                    <td className="px-4 py-3.5 text-[13px] text-gray-700 dark:text-gray-300">{r.appointmentType}</td>
 
                     <td className="px-4 py-3.5">
-                      <p className="text-[13px] text-gray-700">{r.scheduleDate}</p>
-                      <span className="inline-block mt-0.5 text-[11px] px-1.5 py-px rounded border border-blue-200 bg-blue-50 text-blue-600 font-medium">
+                      <p className="text-[13px] text-gray-700 dark:text-gray-300">{r.scheduleDate}</p>
+                      <span className="inline-block mt-0.5 text-[11px] px-1.5 py-px rounded border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium">
                         {r.scheduleTime}
                       </span>
                     </td>
 
-                    <td className="px-4 py-3.5 text-[13px] text-gray-700">{r.doctor}</td>
+                    <td className="px-4 py-3.5 text-[13px] text-gray-700 dark:text-gray-300">{r.doctor}</td>
                   </tr>
                 ))}
                 {visible.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-[13px] text-gray-400">No reservations match these filters.</td>
+                    <td colSpan={6} className="px-4 py-10 text-center text-[13px] text-gray-400 dark:text-gray-500">No reservations match these filters.</td>
                   </tr>
                 )}
               </tbody>

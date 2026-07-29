@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react'
 import {
   SidebarToggleIcon, DashboardGridIcon, MailIcon, PencilIcon, CalendarIcon, FileTextIcon, PillIcon,
-  LifeBuoyIcon, UsersIcon, UserGearIcon, ClockIcon, ActivityPulseIcon, ActivityLogIcon,
+  LifeBuoyIcon, UsersIcon, UserGearIcon, ClockIcon, ActivityPulseIcon, ActivityLogIcon, SunIcon, MoonIcon,
 } from '@/icons'
+import type { Theme } from '@/hooks/useTheme'
 import type { PageName } from '@/types/domain'
 
 const ADMIN_NAV: { label: string; icon: ReactNode }[] = [
@@ -19,6 +20,8 @@ export function Sidebar({
   onToggleSidebar,
   userRole,
   onChangeRole,
+  theme,
+  onChangeTheme,
 }: {
   page: PageName
   onNavigate: (page: PageName) => void
@@ -26,6 +29,8 @@ export function Sidebar({
   onToggleSidebar: () => void
   userRole: 'Staff' | 'IT Staff'
   onChangeRole: (role: 'Staff' | 'IT Staff') => void
+  theme: Theme
+  onChangeTheme: (t: Theme) => void
 }) {
   return (
     <aside className={`${isSidebarOpen ? 'w-56' : 'w-16'} bg-[#111827] text-white flex flex-col shrink-0 transition-[width] duration-200 overflow-hidden`}>
@@ -128,6 +133,23 @@ export function Sidebar({
               className={`flex-1 w-full text-[11px] font-semibold py-1.5 rounded-md transition-colors whitespace-nowrap ${userRole === role ? 'bg-blue-600 text-white' : 'text-white/50 hover:text-white'}`}
             >
               {isSidebarOpen ? role : role === 'IT Staff' ? 'IT' : 'ST'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className={`border-t border-white/10 py-3 ${isSidebarOpen ? 'px-3' : 'px-2'}`}>
+        {isSidebarOpen && <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest mb-1.5">Theme</p>}
+        <div className={`flex items-center gap-1 bg-white/5 rounded-lg p-1 ${isSidebarOpen ? '' : 'flex-col'}`}>
+          {(['light', 'dark'] as const).map(t => (
+            <button
+              key={t}
+              title={!isSidebarOpen ? (t === 'light' ? 'Light mode' : 'Dark mode') : undefined}
+              onClick={() => onChangeTheme(t)}
+              className={`flex-1 w-full flex items-center justify-center gap-1 text-[11px] font-semibold py-1.5 rounded-md transition-colors whitespace-nowrap ${theme === t ? 'bg-blue-600 text-white' : 'text-white/50 hover:text-white'}`}
+            >
+              {t === 'light' ? <SunIcon className="w-3.5 h-3.5" /> : <MoonIcon className="w-3.5 h-3.5" />}
+              {isSidebarOpen && (t === 'light' ? 'Light' : 'Dark')}
             </button>
           ))}
         </div>

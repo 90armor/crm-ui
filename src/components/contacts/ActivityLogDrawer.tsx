@@ -16,28 +16,28 @@ export function ActivityLogDrawer({ contact, dept, onClose }: { contact: Contact
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex justify-end" onClick={onClose}>
-      <div className="w-[440px] max-w-full h-full bg-white shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-        <div className="flex items-start justify-between px-6 py-5 border-b border-gray-100">
+      <div className="w-[440px] max-w-full h-full bg-white dark:bg-gray-900 shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="flex items-start justify-between px-6 py-5 border-b border-gray-100 dark:border-gray-800">
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
               <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wider">Activity Log{dept ? ` · ${dept}` : ''}</p>
             </div>
-            <p className="text-[14px] font-semibold text-gray-900 mt-0.5 truncate">{contact.name}</p>
-            <p className="text-[11px] text-gray-400 mt-0.5">{contact.source}{contact.hnNumber ? ` · ${contact.hnNumber}` : ''} · {contact.lastActive}</p>
+            <p className="text-[14px] font-semibold text-gray-900 dark:text-gray-100 mt-0.5 truncate">{contact.name}</p>
+            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{contact.source}{contact.hnNumber ? ` · ${contact.hnNumber}` : ''} · {contact.lastActive}</p>
           </div>
-          <button onClick={onClose} className="text-gray-300 hover:text-gray-500 text-xl leading-none shrink-0 ml-2">×</button>
+          <button onClick={onClose} className="text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-300 text-xl leading-none shrink-0 ml-2">×</button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-5">
           {visibleLog.length === 0 ? (
-            <p className="text-[12px] text-gray-300 italic">No activity yet{dept ? ` for ${dept}` : ''}</p>
+            <p className="text-[12px] text-gray-300 dark:text-gray-600 italic">No activity yet{dept ? ` for ${dept}` : ''}</p>
           ) : (
             <div className="space-y-2.5">
               {visibleLog.map((log, i) => (
                 <div key={i} className="flex gap-2 items-start">
                   <span className={`w-1 h-1 rounded-full shrink-0 mt-[6px] ${activityLogTone(log)}`} />
-                  <p className="text-[12px] text-gray-500 leading-relaxed">{log}</p>
+                  <p className="text-[12px] text-gray-500 dark:text-gray-400 leading-relaxed">{log}</p>
                 </div>
               ))}
             </div>

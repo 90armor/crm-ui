@@ -13,9 +13,11 @@ import { AssignModal } from '@/components/contacts/AssignModal'
 import { ReturnModal } from '@/components/contacts/ReturnModal'
 import { initialsFor } from '@/lib/format'
 import { INIT, AVATAR_COLORS } from '@/data/contacts'
+import { useTheme } from '@/hooks/useTheme'
 import type { Contact, ChainEntryStatus, Dept, ViewAs, PageName, ManualFormData } from '@/types/domain'
 
 export default function App() {
+  const { theme, setTheme } = useTheme()
   const [contacts, setContacts] = useState<Contact[]>(INIT)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [page, setPage] = useState<PageName>('Inbox')
@@ -123,7 +125,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
       <Sidebar
         page={page}
         onNavigate={navigateTo}
@@ -131,6 +133,8 @@ export default function App() {
         onToggleSidebar={() => setIsSidebarOpen(v => !v)}
         userRole={userRole}
         onChangeRole={changeRole}
+        theme={theme}
+        onChangeTheme={setTheme}
       />
 
       {/* ── Main + Pane wrapper ───────────────────────────────────────────── */}

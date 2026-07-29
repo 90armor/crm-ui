@@ -18,9 +18,9 @@ export function RequestStatusOverview({
   const barSegments = SEGMENT_ORDER.map(status => ({ status, count: counts[status] })).filter(s => s.count > 0)
 
   return (
-    <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-5 mb-5">
-      <p className="text-[13px] font-semibold text-gray-700 mb-3">{title}</p>
-      <div className="w-full h-9 rounded-lg bg-gray-100 overflow-hidden flex">
+    <div className="rounded-2xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/60 dark:bg-blue-950/20 p-5 mb-5">
+      <p className="text-[13px] font-semibold text-gray-700 dark:text-gray-300 mb-3">{title}</p>
+      <div className="w-full h-9 rounded-lg bg-gray-100 dark:bg-gray-800 overflow-hidden flex">
         {barSegments.map(seg => (
           <div
             key={seg.status}
@@ -32,16 +32,16 @@ export function RequestStatusOverview({
         ))}
       </div>
       <div className="flex flex-wrap gap-2 mt-3">
-        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white text-[12px] font-semibold text-gray-700">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-[12px] font-semibold text-gray-700 dark:text-gray-300">
           Total <span className="font-bold">{counts.Total}</span>
         </span>
-        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white text-[12px] font-semibold text-gray-700">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-[12px] font-semibold text-gray-700 dark:text-gray-300">
           <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> Open <span className="font-bold">{counts.Open}</span>
         </span>
-        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white text-[12px] font-semibold text-gray-700">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-[12px] font-semibold text-gray-700 dark:text-gray-300">
           <span className="w-1.5 h-1.5 rounded-full bg-orange-500" /> Pending <span className="font-bold">{counts.Pending}</span>
         </span>
-        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white text-[12px] font-semibold text-gray-700">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-[12px] font-semibold text-gray-700 dark:text-gray-300">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Resolved <span className="font-bold">{counts.Resolved}</span>
         </span>
       </div>

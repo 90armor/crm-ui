@@ -44,7 +44,7 @@ export function ManualFormModal({
     >
       <form id="manual-inquiry-form" onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="manual-patient-id" className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+            <label htmlFor="manual-patient-id" className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
               Patient ID <span className="text-red-500">*</span>
             </label>
             <input
@@ -53,12 +53,12 @@ export function ManualFormModal({
               onChange={e => setPatientId(e.target.value)}
               placeholder="e.g. HN00123"
               autoFocus
-              className="mt-1.5 w-full text-[13px] border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-gray-300"
+              className="mt-1.5 w-full text-[13px] border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-gray-300 dark:placeholder-gray-600"
             />
           </div>
 
           <div>
-            <label htmlFor="manual-name" className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+            <label htmlFor="manual-name" className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
               Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -66,12 +66,12 @@ export function ManualFormModal({
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="Patient full name"
-              className="mt-1.5 w-full text-[13px] border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-gray-300"
+              className="mt-1.5 w-full text-[13px] border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-gray-300 dark:placeholder-gray-600"
             />
           </div>
 
           <div>
-            <label htmlFor="manual-phone" className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+            <label htmlFor="manual-phone" className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
               Phone Number <span className="text-red-500">*</span>
             </label>
             <input
@@ -79,12 +79,12 @@ export function ManualFormModal({
               value={phone}
               onChange={e => setPhone(e.target.value)}
               placeholder="e.g. 0812345678"
-              className="mt-1.5 w-full text-[13px] border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-gray-300"
+              className="mt-1.5 w-full text-[13px] border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-gray-300 dark:placeholder-gray-600"
             />
           </div>
 
           <div>
-            <label htmlFor="manual-comment" className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+            <label htmlFor="manual-comment" className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
               Comment <span className="text-red-500">*</span>
             </label>
             <textarea
@@ -93,7 +93,7 @@ export function ManualFormModal({
               onChange={e => setComment(e.target.value)}
               rows={4}
               placeholder="Describe the patient's inquiry…"
-              className="mt-1.5 w-full text-[13px] border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-gray-300 resize-none"
+              className="mt-1.5 w-full text-[13px] border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-gray-300 dark:placeholder-gray-600 resize-none"
             />
           </div>
       </form>
