@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { Avatar } from '@/components/ui/Avatar'
 import { StatusBadge } from '@/components/ui/StatusBadge'
-import { ManualSourceBadge } from '@/components/ui/ManualSourceBadge'
-import { SourceIcon, ChatBubbleIcon, PhoneIcon, ActivityLogIcon, ChatIcon, ChevronDownIcon } from '@/icons'
+import { SourceIcon, ChatBubbleIcon, PhoneIcon, ActivityLogIcon, ChatIcon, ChevronDownIcon, PencilIcon } from '@/icons'
 import { ENTRY_TONE, ENTRY_STATUS_LABEL, HUE } from '@/theme/hue'
 import { deptShortLabel, CURRENT_ADMIN_NAME, formatNoteTimestamp } from '@/lib/format'
 import { MessagePanel } from '@/components/contacts/MessagePanel'
@@ -21,6 +20,7 @@ function ContactsTable({
   handleMarkComplete,
   onReturn,
   onOpenActivityLog,
+  onEditManual,
   useIconActions = false,
   bare = false,
   lastMessageColumnLabel = 'Last Message',
@@ -36,6 +36,7 @@ function ContactsTable({
   handleMarkComplete: (c: Contact) => void
   onReturn: (c: Contact) => void
   onOpenActivityLog?: (c: Contact) => void
+  onEditManual?: (c: Contact) => void
   useIconActions?: boolean
   // Skips its own card chrome (border/shadow/rounded corners) when the caller
   // already wraps it in one, so filters + table can share a single card.
@@ -48,6 +49,15 @@ function ContactsTable({
   const isNoteExpanded = (id: string) => expandedNotes.has(id)
   const toggleNote = (id: string) =>
     setIsExpandedNotes(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+
+  const [revealedPhones, setRevealedPhones] = useState<Set<string>>(new Set())
+  const togglePhone = (id: string) =>
+    setRevealedPhones(prev => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
@@ -146,7 +156,15 @@ function ContactsTable({
                         <div>
                           <div className="flex items-center gap-1.5">
                             <span className="text-[13px] font-semibold text-gray-900">{contact.name}</span>
-                            {contact.source === 'Manual' && <ManualSourceBadge />}
+                            {contact.source === 'Manual' && onEditManual && (
+                              <button
+                                onClick={e => { e.stopPropagation(); onEditManual(contact) }}
+                                className="inline-flex items-center justify-center w-5 h-5 rounded-full text-gray-400 bg-gray-50 border border-gray-200 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-colors shrink-0"
+                                title="Edit Inquiry"
+                              >
+                                <PencilIcon className="w-3 h-3" />
+                              </button>
+                            )}
                           {contact.priority === 'Prio' && (
                               <span className="text-[10px] px-1.5 py-px rounded font-bold bg-orange-100 text-orange-600 leading-none">PRIO</span>
                             )}
@@ -160,7 +178,16 @@ function ContactsTable({
                             >
                               <ChatIcon />
                             </button>
-                            {contact.phone && <span className="text-[11px] text-gray-400">{contact.phone}</span>}
+                            <button
+                              onClick={e => { e.stopPropagation(); togglePhone(contact.id) }}
+                              className="inline-flex items-center justify-center w-5 h-5 rounded text-emerald-500 hover:bg-emerald-50 transition-colors"
+                              title="Show phone number"
+                            >
+                              <PhoneIcon className="w-3.5 h-3.5" />
+                            </button>
+                            {revealedPhones.has(contact.id) && contact.phone && (
+                              <span className="text-[11px] text-gray-400">{contact.phone}</span>
+                            )}
                           </div>
                         ) : (
                           <div className="flex items-center gap-1 mt-0.5">

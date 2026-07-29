@@ -11,6 +11,15 @@ import { ContactsTable } from '@/components/contacts/ContactsTable'
 import { ManualFormModal } from '@/components/contacts/ManualFormModal'
 import type { Contact, ManualFormData, Status, Priority, Dept } from '@/types/domain'
 
+function manualFormDataFromContact(contact: Contact): ManualFormData {
+  return {
+    patientId: contact.hnNumber ?? '',
+    name: contact.name,
+    phone: contact.phone ?? '',
+    comment: contact.lastMessage,
+  }
+}
+
 export function ManualPage({
   contacts,
   onAdd,
@@ -79,12 +88,27 @@ export function ManualPage({
   }), [manualContacts])
 
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [editingContact, setEditingContact] = useState<Contact | null>(null)
   const [toast, setToast] = useState<string | null>(null)
 
   const handleAdd = (data: ManualFormData) => {
     onAdd(data)
     setIsFormOpen(false)
     setToast(`Inquiry created for ${data.patientId.trim() || data.name.trim() || 'new contact'}`)
+    setTimeout(() => setToast(null), 3500)
+  }
+
+  const handleEditSave = (data: ManualFormData) => {
+    if (!editingContact) return
+    updateContact({
+      ...editingContact,
+      name: data.name.trim() || data.patientId.trim() || 'Unknown',
+      hnNumber: data.patientId.trim() || undefined,
+      phone: data.phone.trim() || undefined,
+      lastMessage: data.comment.trim(),
+    })
+    setEditingContact(null)
+    setToast(`Inquiry updated for ${data.name.trim() || data.patientId.trim() || 'contact'}`)
     setTimeout(() => setToast(null), 3500)
   }
 
@@ -263,13 +287,22 @@ export function ManualPage({
             handleResume={handleResume}
             handleMarkComplete={handleMarkComplete}
             onReturn={onReturn}
+            onEditManual={setEditingContact}
             bare
             lastMessageColumnLabel="Last Note"
           />
         </div>
       </div>
 
-      {isFormOpen && <ManualFormModal onClose={() => setIsFormOpen(false)} onAdd={handleAdd} />}
+      {isFormOpen && <ManualFormModal onClose={() => setIsFormOpen(false)} onSubmit={handleAdd} />}
+      {editingContact && (
+        <ManualFormModal
+          mode="edit"
+          initialData={manualFormDataFromContact(editingContact)}
+          onClose={() => setEditingContact(null)}
+          onSubmit={handleEditSave}
+        />
+      )}
     </>
   )
 }
